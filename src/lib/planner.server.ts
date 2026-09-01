@@ -40,6 +40,19 @@ export function validateProposal(proposal: PlanProposal) {
             "The proposed plan must contain exactly one objective node.",
         );
 
+    if (proposal.strategies.length === 0 && !proposal.blocker)
+        throw new DomainError(
+            "PLAN_VALIDATION_FAILED",
+            "The proposed plan must include at least one strategy or an explicit blocker.",
+        );
+
+    const recommended = proposal.strategies.filter((s) => s.recommended);
+    if (proposal.strategies.length > 0 && recommended.length !== 1)
+        throw new DomainError(
+            "PLAN_VALIDATION_FAILED",
+            "The proposed plan must recommend exactly one strategy.",
+        );
+
     const ids = new Set(proposal.nodes.map((n) => n.tempId));
     if (ids.size !== proposal.nodes.length)
         throw new DomainError(
@@ -47,12 +60,34 @@ export function validateProposal(proposal: PlanProposal) {
             "The proposed plan contains duplicate node ids.",
         );
 
-    const edges = proposal.edges.filter((e) => ids.has(e.from) && ids.has(e.to) && e.from !== e.to);
+    for (const edge of proposal.edges) {
+        if (!ids.has(edge.from) || !ids.has(edge.to))
+            throw new DomainError(
+                "PLAN_VALIDATION_FAILED",
+                "The proposed plan references a dependency node that does not exist.",
+            );
+        if (edge.from === edge.to)
+            throw new DomainError(
+                "PLAN_VALIDATION_FAILED",
+                "The proposed plan contains a self-referential dependency.",
+            );
+    }
+
+    const edges = proposal.edges;
 
     const strategyKeys = new Set(proposal.strategies.map((s) => s.key));
+    const unknownStrategyNode = proposal.nodes.find(
+        (n) => n.strategyKey && !strategyKeys.has(n.strategyKey),
+    );
+    if (unknownStrategyNode)
+        throw new DomainError(
+            "PLAN_VALIDATION_FAILED",
+            "The proposed plan assigns a node to a strategy that does not exist.",
+        );
+
     const nodes = proposal.nodes.map((n) => ({
         ...n,
-        strategyKey: n.strategyKey && strategyKeys.has(n.strategyKey) ? n.strategyKey : null,
+        strategyKey: n.strategyKey ?? null,
     }));
 
     const cycle = findHardCycle(
@@ -87,6 +122,21 @@ export function validateProposal(proposal: PlanProposal) {
         throw new DomainError(
             "PLAN_VALIDATION_FAILED",
             "The proposed plan produced no executable action and no explicit blocker.",
+        );
+
+    const vagueAction = executable.find(
+        (n) => !n.completionCriteria?.trim() || !n.expectedResult?.trim(),
+    );
+    if (vagueAction)
+        throw new DomainError(
+            "PLAN_VALIDATION_FAILED",
+            "Every action or experiment must include completion criteria and an expected result.",
+        );
+
+    if (proposal.bottleneckTempId && !ids.has(proposal.bottleneckTempId))
+        throw new DomainError(
+            "PLAN_VALIDATION_FAILED",
+            "The proposed bottleneck references a node that does not exist.",
         );
 
     return { nodes, edges };
@@ -305,6 +355,88 @@ export function snapshotText(input: {
         );
     }
     return lines.filter(Boolean).join("\n").slice(0, 12000);
+}
+
+export function diffPlanNodes(input: {
+    userId: string;
+    planId: string;
+    fromVersionId: string;
+    toVersionId: string;
+    beforeNodes: GraphNode[];
+    afterNodes: GraphNode[];
+    reasonCode: string;
+}) {
+    const keyFor = (node: GraphNode) => `${node.node_type}:${node.title.trim().toLowerCase()}`;
+    const before = new Map(input.beforeNodes.map((node) => [keyFor(node), node]));
+    const after = new Map(input.afterNodes.map((node) => [keyFor(node), node]));
+    const rows: Array<{
+        user_id: string;
+        plan_id: string;
+        from_version_id: string;
+        to_version_id: string;
+        entity_type: string;
+        entity_id: string | null;
+        change_type: string;
+        before_summary: string | null;
+        after_summary: string | null;
+        reason_code: string;
+    }> = [];
+
+    for (const [key, node] of after) {
+        const previous = before.get(key);
+        if (!previous) {
+            rows.push({
+                user_id: input.userId,
+                plan_id: input.planId,
+                from_version_id: input.fromVersionId,
+                to_version_id: input.toVersionId,
+                entity_type: node.node_type,
+                entity_id: node.id,
+                change_type: "ADDED",
+                before_summary: null,
+                after_summary: node.title,
+                reason_code: input.reasonCode,
+            });
+            continue;
+        }
+
+        if (
+            previous.description !== node.description ||
+            previous.status !== node.status ||
+            previous.priority_score !== node.priority_score
+        ) {
+            rows.push({
+                user_id: input.userId,
+                plan_id: input.planId,
+                from_version_id: input.fromVersionId,
+                to_version_id: input.toVersionId,
+                entity_type: node.node_type,
+                entity_id: node.id,
+                change_type: "MODIFIED",
+                before_summary: previous.title,
+                after_summary: node.title,
+                reason_code: input.reasonCode,
+            });
+        }
+    }
+
+    for (const [key, node] of before) {
+        if (after.has(key)) continue;
+        rows.push({
+            user_id: input.userId,
+            plan_id: input.planId,
+            from_version_id: input.fromVersionId,
+            to_version_id: input.toVersionId,
+            entity_type: node.node_type,
+            entity_id: node.id,
+            change_type: "REMOVED",
+            before_summary: node.title,
+            after_summary: null,
+            reason_code: input.reasonCode,
+        });
+    }
+
+    return rows.slice(0, 50);
 }
 
 export async function nextVersionNumber(supabase: Client, planId: string) {
