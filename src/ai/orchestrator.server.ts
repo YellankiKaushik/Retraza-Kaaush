@@ -7,8 +7,8 @@ import { generateObject } from "ai";
 import type { z } from "zod";
 
 import {
-    MODEL_ALIASES,
     classifyAiError,
+    modelForAlias,
     requireGateway,
     type ModelAlias,
 } from "@/lib/ai-gateway.server";
@@ -34,6 +34,7 @@ const AI_TIMEOUT_MS = 90_000;
 
 export interface AiCallMeta {
     operation: string;
+    provider: string;
     modelAlias: string;
     promptVersion: string;
     latencyMs: number;
@@ -58,12 +59,12 @@ async function callModel<S extends z.ZodType>(args: {
     correlationId: string;
 }): Promise<AiCallResult<z.infer<S>>> {
     const gateway = requireGateway();
-    const model = MODEL_ALIASES[args.alias];
+    const model = modelForAlias(args.alias);
     const started = Date.now();
 
     try {
         const result = await generateObject({
-            model: gateway(model),
+            model: gateway.model(model),
             schema: args.schema,
             system: args.system,
             prompt: args.prompt,
@@ -75,6 +76,7 @@ async function callModel<S extends z.ZodType>(args: {
             data: result.object as z.infer<S>,
             meta: {
                 operation: args.operation,
+                provider: gateway.providerName,
                 modelAlias: model,
                 promptVersion: PROMPT_VERSION,
                 latencyMs: Date.now() - started,
@@ -96,6 +98,7 @@ async function callModel<S extends z.ZodType>(args: {
         enriched.retryable = failure.retryable;
         enriched.meta = {
             operation: args.operation,
+            provider: gateway.providerName,
             modelAlias: model,
             promptVersion: PROMPT_VERSION,
             latencyMs: Date.now() - started,
