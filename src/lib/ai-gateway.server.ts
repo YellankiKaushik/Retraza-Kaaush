@@ -1,19 +1,19 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
 /**
- * The only trusted inference boundary. Model aliases are configuration, never
- * hardcoded at call sites (NFR-MNT-001 / model routing).
+ * The only trusted inference boundary. Provider credentials and model IDs are
+ * server-side configuration, never browser state or UI-selected values.
  */
-export const MODEL_ALIASES = {
-    FAST: "google/gemini-3.1-flash-lite",
-    PRIMARY: "google/gemini-3.7-flash",
-    CRITIC: "google/gemini-3.1-pro-preview",
-    FALLBACK: "google/gemini-2.5-flash",
+const MODEL_ALIAS_ENV = {
+    FAST: "OPENAI_MODEL_FAST",
+    PRIMARY: "OPENAI_MODEL_PRIMARY",
+    CRITIC: "OPENAI_MODEL_CRITIC",
+    FALLBACK: "OPENAI_MODEL_FALLBACK",
 } as const;
 
-export type ModelAlias = keyof typeof MODEL_ALIASES;
+export type ModelAlias = keyof typeof MODEL_ALIAS_ENV;
 
-export function createLovableAiGatewayProvider(apiKey: string) {
+function createLovableAiGatewayProvider(apiKey: string) {
     return createOpenAICompatible({
         name: "lovable",
         baseURL: "https://ai.gateway.lovable.dev/v1",
@@ -22,14 +22,46 @@ export function createLovableAiGatewayProvider(apiKey: string) {
     });
 }
 
-export function requireGateway() {
-    const key = process.env["LOVABLE_API_KEY"];
-    if (!key) {
-        const error = new Error("AI is not configured for this app.");
+function createOpenAiProvider(apiKey: string, baseURL = "https://api.openai.com/v1") {
+    return createOpenAICompatible({
+        name: "openai",
+        baseURL,
+        headers: { Authorization: `Bearer ${apiKey}` },
+        supportsStructuredOutputs: true,
+    });
+}
+
+export function modelForAlias(alias: ModelAlias) {
+    const envName = MODEL_ALIAS_ENV[alias];
+    const model = process.env[envName];
+    if (!model) {
+        const error = new Error(`Missing AI model configuration: ${envName}.`);
         (error as Error & { code?: string }).code = "AI_UNAVAILABLE";
         throw error;
     }
-    return createLovableAiGatewayProvider(key);
+    return model;
+}
+
+export function requireGateway() {
+    const openAiKey = process.env["OPENAI_API_KEY"];
+    if (openAiKey) {
+        return {
+            providerName: "openai",
+            model: createOpenAiProvider(openAiKey, process.env["OPENAI_BASE_URL"]),
+        };
+    }
+
+    const lovableKey = process.env["LOVABLE_API_KEY"];
+    if (lovableKey) {
+        return {
+            providerName: "lovable-ai",
+            model: createLovableAiGatewayProvider(lovableKey),
+        };
+    }
+
+    const error = new Error("AI is not configured for this app.");
+    (error as Error & { code?: string }).code = "AI_UNAVAILABLE";
+    throw error;
 }
 
 export interface AiFailure {
