@@ -172,7 +172,7 @@ export const replan = createServerFn({ method: "POST" })
         const { supabase, userId } = context;
         const { runReplan, runChangeExplanation } = await import("@/ai/orchestrator.server");
         const { PROMPT_VERSION } = await import("@/ai/plan-contract");
-        const { persistProposal, nextVersionNumber, snapshotText, DomainError } =
+        const { persistProposal, nextVersionNumber, snapshotText, diffPlanNodes, DomainError } =
             await import("@/lib/planner.server");
         const telemetry = await import("@/lib/telemetry.server");
 
@@ -281,6 +281,16 @@ export const replan = createServerFn({ method: "POST" })
                 summary: proposal.summary,
             });
 
+            let changeRows = diffPlanNodes({
+                userId,
+                planId: data.planId,
+                fromVersionId: activeVersionId,
+                toVersionId: versionId,
+                beforeNodes: (nodes.data ?? []) as never,
+                afterNodes: (afterNodes.data ?? []) as never,
+                reasonCode: data.reason,
+            });
+
             try {
                 const explanation = await runChangeExplanation({
                     before,
@@ -290,22 +300,25 @@ export const replan = createServerFn({ method: "POST" })
                 });
                 await telemetry.recordAiUsage(userId, explanation.meta);
                 if (explanation.data.changes.length > 0) {
-                    await supabase.from("plan_changes").insert(
-                        explanation.data.changes.map((c) => ({
+                    changeRows = explanation.data.changes.map((c) => ({
                             user_id: userId,
                             plan_id: data.planId,
                             from_version_id: activeVersionId,
                             to_version_id: versionId,
                             entity_type: c.entityType,
+                            entity_id: null,
                             change_type: c.changeType,
                             before_summary: c.beforeSummary,
                             after_summary: c.afterSummary,
                             reason_code: data.reason,
-                        })),
-                    );
+                    }));
                 }
             } catch {
-                // A missing diff must never block a valid candidate version.
+                // The deterministic diff above keeps the candidate reviewable.
+            }
+
+            if (changeRows.length > 0) {
+                await supabase.from("plan_changes").insert(changeRows);
             }
 
             const result = { versionId, versionNumber, requiresAcceptance: true };
