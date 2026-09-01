@@ -7,7 +7,7 @@ export async function recordAiUsage(userId: string, meta: AiCallMeta) {
     await supabaseAdmin.from("ai_usage_events").insert({
         user_id: userId,
         operation: meta.operation,
-        provider: "lovable-ai",
+        provider: meta.provider,
         model_alias: meta.modelAlias,
         prompt_version: meta.promptVersion,
         input_tokens: meta.inputTokens,
