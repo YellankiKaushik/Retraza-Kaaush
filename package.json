@@ -10,9 +10,11 @@
         "preview": "vite preview",
         "typecheck": "tsc --noEmit",
         "lint": "eslint .",
-        "test": "vitest run",
+        "test": "vitest run tests/unit tests/integration tests/db",
         "test:unit": "vitest run tests/unit",
+        "test:integration": "vitest run tests/integration",
         "test:db": "vitest run tests/db",
+        "test:e2e": "node scripts/run-e2e.mjs",
         "format": "prettier --write ."
     },
     "overrides": {
@@ -79,6 +81,7 @@
     "devDependencies": {
         "@eslint/js": "^9.32.0",
         "@lovable.dev/vite-tanstack-config": "^2.15.0",
+        "@playwright/test": "^1.62.1",
         "@types/node": "^22.16.5",
         "@types/react": "^19.2.0",
         "@types/react-dom": "^19.2.0",
