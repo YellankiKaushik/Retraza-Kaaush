@@ -7,9 +7,12 @@ import { generateObject } from "ai";
 import type { z } from "zod";
 
 import {
+    candidatesForAlias,
     classifyAiError,
-    modelForAlias,
-    requireGateway,
+    isMockAiEnabled,
+    maxProviderRetries,
+    timeoutMs,
+    type AiAttemptTelemetry,
     type ModelAlias,
 } from "@/lib/ai-gateway.server";
 
@@ -28,14 +31,19 @@ import {
     planningPrompt,
     replanPrompt,
 } from "./prompts.server";
+import {
+    mockChangeExplanation,
+    mockIntakeAnalysis,
+    mockPlanProposal,
+} from "./mock-provider.server";
 
 export const MAX_INTAKE_CHARS = 10_000;
-const AI_TIMEOUT_MS = 90_000;
 
 export interface AiCallMeta {
     operation: string;
     provider: string;
     modelAlias: string;
+    providerModel: string | null;
     promptVersion: string;
     latencyMs: number;
     inputTokens: number | null;
@@ -43,6 +51,7 @@ export interface AiCallMeta {
     outcome: string;
     schemaValid: boolean;
     correlationId: string;
+    attempts: AiAttemptTelemetry[];
 }
 
 export interface AiCallResult<T> {
@@ -57,59 +66,143 @@ async function callModel<S extends z.ZodType>(args: {
     system: string;
     prompt: string;
     correlationId: string;
+    mock: () => z.infer<S>;
 }): Promise<AiCallResult<z.infer<S>>> {
-    const gateway = requireGateway();
-    const model = modelForAlias(args.alias);
     const started = Date.now();
 
-    try {
-        const result = await generateObject({
-            model: gateway.model(model),
-            schema: args.schema,
-            system: args.system,
-            prompt: args.prompt,
-            maxRetries: 1,
-            abortSignal: AbortSignal.timeout(AI_TIMEOUT_MS),
-        });
-
+    if (isMockAiEnabled()) {
         return {
-            data: result.object as z.infer<S>,
+            data: args.schema.parse(args.mock()),
             meta: {
                 operation: args.operation,
-                provider: gateway.providerName,
-                modelAlias: model,
+                provider: "mock",
+                modelAlias: args.alias,
+                providerModel: "deterministic",
                 promptVersion: PROMPT_VERSION,
                 latencyMs: Date.now() - started,
-                inputTokens: result.usage?.inputTokens ?? null,
-                outputTokens: result.usage?.outputTokens ?? null,
+                inputTokens: null,
+                outputTokens: null,
                 outcome: "SUCCESS",
                 schemaValid: true,
                 correlationId: args.correlationId,
+                attempts: [],
             },
         };
-    } catch (error) {
-        const failure = classifyAiError(error);
-        const enriched = new Error(failure.message) as Error & {
+    }
+
+    const candidates = candidatesForAlias(args.alias);
+    if (candidates.length === 0) {
+        const enriched = new Error(
+            "AI is temporarily unavailable because no enabled provider has both a server-side key and configured model.",
+        ) as Error & {
             code: string;
             retryable: boolean;
             meta: AiCallMeta;
         };
-        enriched.code = failure.code;
-        enriched.retryable = failure.retryable;
+        enriched.code = "AI_UNAVAILABLE";
+        enriched.retryable = false;
         enriched.meta = {
             operation: args.operation,
-            provider: gateway.providerName,
-            modelAlias: model,
+            provider: "none",
+            modelAlias: args.alias,
+            providerModel: null,
             promptVersion: PROMPT_VERSION,
             latencyMs: Date.now() - started,
             inputTokens: null,
             outputTokens: null,
-            outcome: failure.code,
-            schemaValid: failure.code !== "AI_SCHEMA_INVALID",
+            outcome: "AI_UNAVAILABLE",
+            schemaValid: false,
             correlationId: args.correlationId,
+            attempts: [],
         };
         throw enriched;
     }
+
+    const attempts: AiAttemptTelemetry[] = [];
+    let lastFailure = classifyAiError(new Error("AI is temporarily unavailable."));
+
+    for (const candidate of candidates) {
+        for (let attempt = 0; attempt <= maxProviderRetries(); attempt += 1) {
+            const attemptStarted = Date.now();
+            try {
+                const result = await generateObject({
+                    model: candidate.model,
+                    schema: args.schema,
+                    system: args.system,
+                    prompt: args.prompt,
+                    maxRetries: 0,
+                    abortSignal: AbortSignal.timeout(timeoutMs()),
+                });
+
+                attempts.push({
+                    provider: candidate.providerName,
+                    modelAlias: candidate.modelAlias,
+                    modelId: candidate.modelId,
+                    attempt,
+                    latencyMs: Date.now() - attemptStarted,
+                    outcome: "SUCCESS",
+                    retryable: false,
+                });
+
+                return {
+                    data: args.schema.parse(result.object),
+                    meta: {
+                        operation: args.operation,
+                        provider: candidate.providerName,
+                        modelAlias: args.alias,
+                        providerModel: candidate.modelId,
+                        promptVersion: PROMPT_VERSION,
+                        latencyMs: Date.now() - started,
+                        inputTokens: result.usage?.inputTokens ?? null,
+                        outputTokens: result.usage?.outputTokens ?? null,
+                        outcome: "SUCCESS",
+                        schemaValid: true,
+                        correlationId: args.correlationId,
+                        attempts,
+                    },
+                };
+            } catch (error) {
+                lastFailure = classifyAiError(error);
+                attempts.push({
+                    provider: candidate.providerName,
+                    modelAlias: candidate.modelAlias,
+                    modelId: candidate.modelId,
+                    attempt,
+                    latencyMs: Date.now() - attemptStarted,
+                    outcome: lastFailure.code,
+                    retryable: lastFailure.retryable,
+                });
+                if (!lastFailure.retryable) break;
+            }
+        }
+    }
+
+    const enriched = new Error(
+        lastFailure.retryable
+            ? "AI is temporarily unavailable after trying every configured provider. Saved plans still work."
+            : lastFailure.message,
+    ) as Error & {
+        code: string;
+        retryable: boolean;
+        meta: AiCallMeta;
+    };
+    enriched.code = lastFailure.code;
+    enriched.retryable = lastFailure.retryable;
+    enriched.meta = {
+        operation: args.operation,
+        provider: attempts.at(-1)?.provider ?? "none",
+        modelAlias: args.alias,
+        providerModel: attempts.at(-1)?.modelId ?? null,
+        promptVersion: PROMPT_VERSION,
+        latencyMs: Date.now() - started,
+        inputTokens: null,
+        outputTokens: null,
+        outcome: lastFailure.code,
+        schemaValid: lastFailure.code !== "AI_SCHEMA_INVALID",
+        correlationId: args.correlationId,
+        attempts,
+    };
+    throw enriched;
 }
 
 export function runIntakeAnalysis(input: {
@@ -126,6 +219,7 @@ export function runIntakeAnalysis(input: {
         system,
         prompt,
         correlationId: input.correlationId,
+        mock: () => mockIntakeAnalysis(input),
     });
 }
 
@@ -140,6 +234,7 @@ export function runPlanGeneration(
         system,
         prompt,
         correlationId: input.correlationId,
+        mock: () => mockPlanProposal(input),
     });
 }
 
@@ -154,6 +249,7 @@ export function runReplan(
         system,
         prompt,
         correlationId: input.correlationId,
+        mock: () => mockPlanProposal({ ...input, replan: true }),
     });
 }
 
@@ -168,5 +264,6 @@ export function runChangeExplanation(
         system,
         prompt,
         correlationId: input.correlationId,
+        mock: () => mockChangeExplanation(),
     });
 }
