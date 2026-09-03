@@ -22,7 +22,7 @@
 
 ## Implementation Reconciliation Note
 
-As of 2026-09-01 this repository contains a TanStack Start/React/TypeScript implementation with Supabase migrations, server-side AI orchestration, structured AI schemas, authenticated server functions, plan graph persistence, executable-frontier logic, action/check-in/replan flows, and automated Vitest coverage for core domain and schema behavior.
+As of 2026-09-03 this repository contains a TanStack Start/React/TypeScript implementation with Supabase migrations, server-side AI orchestration, structured AI schemas, authenticated server functions, plan graph persistence, executable-frontier logic, action/check-in/replan flows, deterministic mock AI for no-cost tests, provider-router coverage, integration-style Golden Path coverage, database/RLS migration validation, and Playwright browser guard coverage.
 
 This note updates the original pre-implementation baseline without replacing the deeper target architecture. The implementation is authoritative where it differs from the draft sections below.
 
@@ -38,9 +38,11 @@ Current evidence locations:
 
 Known implementation deviations from the original target:
 
-- AI execution currently runs through TanStack server functions using an OpenAI-compatible provider boundary. A separate Supabase Edge Function is not yet present.
-- The provider is OpenAI by default via server-side `OPENAI_API_KEY`; Lovable AI remains an optional compatible fallback for Lovable-hosted environments.
-- Full browser E2E and live Supabase RLS integration tests require external project credentials and are not yet committed.
+- AI execution currently runs through TanStack server functions using an OpenAI-compatible multi-provider boundary. A separate Supabase Edge Function is not yet present.
+- Provider routing is free-first and environment-configurable: Groq is preferred for lightweight classification/clarification, Gemini for planning/replanning, OpenRouter for free-model fallback, and OpenAI only as an optional paid fallback. Exact model IDs remain environment values.
+- Supabase PostgreSQL remains the only authoritative structured-data store. Supabase Storage is the MVP object-storage implementation behind a small abstraction for future large-object adapters.
+- Notion is not application storage. Only a future-facing `Export Plan to Notion` interface is present.
+- Full authenticated browser Golden Path and live two-user Supabase RLS tests are committed but remain opt-in because they require external project credentials. Normal automated tests use deterministic mock AI and require no paid provider calls.
 
 ---
 
@@ -74,13 +76,13 @@ The design deliberately separates **AI reasoning proposals** from **authoritativ
 | Document ID | DOC-RP-ARCH-001 |
 | Project | ReversePath MVP |
 | System | ReversePath |
-| Repository | TBD â€” GitHub repository will be created/synced from Lovable |
+| Repository | Local ReversePath project repository; GitHub/Lovable sync TBD |
 | Document version | 0.1.0 |
-| System version | 0.0.0 â€” not implemented |
-| Status | Draft |
+| System version | 0.1.0 â€” MVP implementation baseline |
+| Status | Implementation baseline |
 | Classification | INTERNAL during development; revisit before public release |
 | Created | 2026-08-27 |
-| Updated | 2026-08-27 |
+| Updated | 2026-09-03 |
 
 ## 0.2 Document Purpose [REQUIRED]
 
@@ -2603,7 +2605,7 @@ No implemented exceptions exist yet. Any deviation from dependency rules, server
 
 ## 31.1 Capacity Model
 
-[EVIDENCE] No production workload exists. Therefore current utilization and tested capacity are **TBD â€” application is not implemented**.
+[EVIDENCE] No production workload exists. Therefore current utilization and tested capacity are **TBD** until a configured Supabase/AI environment is exercised under realistic load.
 
 Initial design variables to measure from first staging tests:
 
@@ -2659,7 +2661,7 @@ Product pricing MUST be based on observed token distribution, not an average fro
 
 ## 32.1 Current State
 
-[REQUIRED] **No implemented application currently exists.** Current state is product concept + this architecture specification.
+[REQUIRED] A TanStack Start/React/Supabase implementation baseline exists in this repository. It includes authenticated server functions, Supabase migrations/RLS, structured AI contracts, plan graph persistence, executable frontier calculation, action/check-in/replan flows, plan-version diffs, and automated domain/migration tests. Live Golden Path verification still requires a configured Supabase project, applied migrations, user accounts, and server-side AI credentials.
 
 ## 32.2 Target State
 
@@ -3711,7 +3713,7 @@ Exact resource IDs/names are TBD until creation.
 
 ## Appendix J â€” Compliance Evidence
 
-No formal compliance evidence exists because the system is not implemented.
+No formal compliance certification exists. Implementation evidence is limited to repository source, migrations, and local automated checks until a configured Supabase/AI environment and deployment are tested.
 
 | Requirement | Evidence | Location |
 |---|---|---|
