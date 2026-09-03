@@ -830,7 +830,13 @@ export type Database = {
             [_ in never]: never;
         };
         Functions: {
-            [_ in never]: never;
+            activate_plan_version_for_user: {
+                Args: {
+                    target_plan_id: string;
+                    target_version_id: string;
+                };
+                Returns: undefined;
+            };
         };
         Enums: {
             band: "LOW" | "MEDIUM" | "HIGH";
