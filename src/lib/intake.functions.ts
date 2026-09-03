@@ -40,11 +40,20 @@ export const createIntake = createServerFn({ method: "POST" })
         const { runIntakeAnalysis } = await import("@/ai/orchestrator.server");
         const telemetry = await import("@/lib/telemetry.server");
 
-        const claim = await telemetry.claimIdempotencyKey(userId, "CREATE_INTAKE", data.idempotencyKey);
+        const claim = await telemetry.claimIdempotencyKey(
+            userId,
+            "CREATE_INTAKE",
+            data.idempotencyKey,
+        );
         if (claim.replay) return claim.replay as { caseId: string };
 
         try {
-            await telemetry.assertWithinQuota(userId, "CLASSIFY_AND_CLARIFY", 20, 1);
+            await telemetry.assertWithinQuota(
+                userId,
+                "CLASSIFY_AND_CLARIFY",
+                telemetry.configuredDailyAiLimit("CLASSIFY_AND_CLARIFY", 20),
+                24,
+            );
 
             const correlationId = crypto.randomUUID();
             const { data: analysis, meta } = await runIntakeAnalysis({
@@ -58,8 +67,8 @@ export const createIntake = createServerFn({ method: "POST" })
             const status = !analysis.policy.supported
                 ? "REJECTED"
                 : analysis.questions.length > 0 || analysis.clarity.score < 70
-                    ? "NEEDS_CLARIFICATION"
-                    : "READY_FOR_PLANNING";
+                  ? "NEEDS_CLARIFICATION"
+                  : "READY_FOR_PLANNING";
 
             const { data: created, error } = await supabase
                 .from("intake_cases")
@@ -96,7 +105,12 @@ export const createIntake = createServerFn({ method: "POST" })
                 policy: analysis.policy,
             };
 
-            await telemetry.completeIdempotencyKey(userId, "CREATE_INTAKE", data.idempotencyKey, result);
+            await telemetry.completeIdempotencyKey(
+                userId,
+                "CREATE_INTAKE",
+                data.idempotencyKey,
+                result,
+            );
             await telemetry.recordAudit({
                 userId,
                 action: "INTAKE_CREATED",
@@ -109,7 +123,9 @@ export const createIntake = createServerFn({ method: "POST" })
             await telemetry.releaseIdempotencyKey(userId, "CREATE_INTAKE", data.idempotencyKey);
             const err = error as Error & { code?: string; meta?: never };
             if (err.code && err.code.startsWith("AI_")) {
-                const withMeta = error as Error & { meta?: Parameters<typeof telemetry.recordAiUsage>[1] };
+                const withMeta = error as Error & {
+                    meta?: Parameters<typeof telemetry.recordAiUsage>[1];
+                };
                 if (withMeta.meta) await telemetry.recordAiUsage(userId, withMeta.meta);
             }
             throw new Error(err.message);
