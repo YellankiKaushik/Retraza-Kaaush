@@ -8,7 +8,9 @@ export async function recordAiUsage(userId: string, meta: AiCallMeta) {
         user_id: userId,
         operation: meta.operation,
         provider: meta.provider,
-        model_alias: meta.modelAlias,
+        model_alias: meta.providerModel
+            ? `${meta.modelAlias}:${meta.providerModel}`
+            : meta.modelAlias,
         prompt_version: meta.promptVersion,
         input_tokens: meta.inputTokens,
         output_tokens: meta.outputTokens,
@@ -37,6 +39,18 @@ export async function recordAudit(input: {
         correlation_id: input.correlationId ?? null,
         metadata: (input.metadata ?? {}) as never,
     });
+}
+
+export function configuredDailyAiLimit(operation: string, fallback: number) {
+    const candidates = [
+        process.env[`AI_LIMIT_${operation}_PER_DAY`],
+        process.env["AI_DAILY_REQUEST_LIMIT"],
+    ];
+    for (const candidate of candidates) {
+        const parsed = Number(candidate);
+        if (Number.isFinite(parsed) && parsed > 0) return Math.floor(parsed);
+    }
+    return fallback;
 }
 
 /** FR-024 — server-side quota enforcement. */
