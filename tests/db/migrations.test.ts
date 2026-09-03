@@ -65,4 +65,14 @@ describe("Supabase migrations", () => {
         expect(allSql).toContain("require_same_owner");
         expect(allSql).toMatch(/actions must reference an ACTION or EXPERIMENT node/i);
     });
+
+    it("keeps plan-version activation owner-scoped and database-owned", () => {
+        expect(allSql).toMatch(/CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.activate_plan_version_for_user/i);
+        expect(allSql).toMatch(/target_owner_id\s+<>\s+auth\.uid\(\)/i);
+        expect(allSql).toMatch(/state\s+=\s+'SUPERSEDED'/i);
+        expect(allSql).toMatch(/active_version_id\s+=\s+target_version_id/i);
+        expect(allSql).toMatch(
+            /GRANT\s+EXECUTE\s+ON\s+FUNCTION\s+public\.activate_plan_version_for_user\(uuid,\s*uuid\)\s+TO\s+authenticated/i,
+        );
+    });
 });
