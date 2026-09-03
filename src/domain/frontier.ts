@@ -117,7 +117,7 @@ export function computeFrontier(
 
         const unmet = prerequisiteEdges
             .map((e) => byId.get(e.edge_type === "BLOCKED_BY" ? e.to_node_id : e.from_node_id))
-            .filter((n): n is GraphNode => !!n && !TERMINAL_STATUSES.includes(n.status));
+            .filter((n): n is GraphNode => !!n && n.status !== "DONE");
 
         const w = readWeights(node);
         const leverage = dependencyLeverage(node.id, edges);
