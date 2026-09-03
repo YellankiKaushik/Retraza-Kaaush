@@ -48,6 +48,27 @@ describe("computeFrontier", () => {
         expect(frontier.blocked[0]?.blockedBy.map((item) => item.id)).toContain("income-proof");
     });
 
+    it("keeps dependents blocked when a hard prerequisite is skipped or cancelled", () => {
+        const skipped = node({ id: "skipped", title: "Skipped prerequisite", status: "SKIPPED" });
+        const cancelled = node({ id: "cancelled", title: "Cancelled prerequisite", status: "CANCELLED" });
+        const afterSkipped = node({ id: "after-skipped", title: "Do work after skipped prerequisite" });
+        const afterCancelled = node({ id: "after-cancelled", title: "Do work after cancelled prerequisite" });
+
+        const frontier = computeFrontier(
+            [skipped, cancelled, afterSkipped, afterCancelled],
+            [
+                edge({ from_node_id: "skipped", to_node_id: "after-skipped" }),
+                edge({ from_node_id: "cancelled", to_node_id: "after-cancelled" }),
+            ],
+        );
+
+        expect(frontier.ready.map((candidate) => candidate.node.id)).not.toContain("after-skipped");
+        expect(frontier.ready.map((candidate) => candidate.node.id)).not.toContain("after-cancelled");
+        expect(frontier.blocked.map((candidate) => candidate.node.id)).toEqual(
+            expect.arrayContaining(["after-skipped", "after-cancelled"]),
+        );
+    });
+
     it("prioritises high-leverage ready actions", () => {
         const simple = node({
             id: "simple",
