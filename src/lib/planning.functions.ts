@@ -45,11 +45,20 @@ export const generatePlan = createServerFn({ method: "POST" })
             await import("@/lib/planner.server");
         const telemetry = await import("@/lib/telemetry.server");
 
-        const claim = await telemetry.claimIdempotencyKey(userId, "GENERATE_PLAN", data.idempotencyKey);
+        const claim = await telemetry.claimIdempotencyKey(
+            userId,
+            "GENERATE_PLAN",
+            data.idempotencyKey,
+        );
         if (claim.replay) return claim.replay as { planId: string; versionId: string };
 
         try {
-            await telemetry.assertWithinQuota(userId, "GENERATE_PLAN_GRAPH", 10, 24);
+            await telemetry.assertWithinQuota(
+                userId,
+                "GENERATE_PLAN_GRAPH",
+                telemetry.configuredDailyAiLimit("GENERATE_PLAN_GRAPH", 10),
+                24,
+            );
 
             const caseRow = await supabase
                 .from("intake_cases")
@@ -57,7 +66,8 @@ export const generatePlan = createServerFn({ method: "POST" })
                 .eq("id", data.caseId)
                 .eq("user_id", userId)
                 .maybeSingle();
-            if (!caseRow.data) throw new DomainError("FORBIDDEN", "That intake could not be found.");
+            if (!caseRow.data)
+                throw new DomainError("FORBIDDEN", "That intake could not be found.");
             if (caseRow.data.status === "REJECTED")
                 throw new DomainError(
                     "PLAN_VALIDATION_FAILED",
@@ -114,13 +124,6 @@ export const generatePlan = createServerFn({ method: "POST" })
             }
 
             const versionNumber = await nextVersionNumber(supabase, planId);
-            if (versionNumber > 1) {
-                await supabase
-                    .from("plan_versions")
-                    .update({ state: "SUPERSEDED" })
-                    .eq("plan_id", planId)
-                    .eq("state", "ACTIVE");
-            }
 
             const { versionId } = await persistProposal({
                 supabase,
@@ -144,7 +147,12 @@ export const generatePlan = createServerFn({ method: "POST" })
                 .eq("user_id", userId);
 
             const result = { planId, versionId, blocker: proposal.blocker ?? null };
-            await telemetry.completeIdempotencyKey(userId, "GENERATE_PLAN", data.idempotencyKey, result);
+            await telemetry.completeIdempotencyKey(
+                userId,
+                "GENERATE_PLAN",
+                data.idempotencyKey,
+                result,
+            );
             await telemetry.recordAudit({
                 userId,
                 action: "PLAN_GENERATED",
@@ -180,7 +188,12 @@ export const replan = createServerFn({ method: "POST" })
         if (claim.replay) return claim.replay as { versionId: string };
 
         try {
-            await telemetry.assertWithinQuota(userId, "REPLAN", 10, 24);
+            await telemetry.assertWithinQuota(
+                userId,
+                "REPLAN",
+                telemetry.configuredDailyAiLimit("REPLAN", 10),
+                24,
+            );
 
             const plan = await supabase
                 .from("plans")
@@ -189,7 +202,10 @@ export const replan = createServerFn({ method: "POST" })
                 .eq("user_id", userId)
                 .maybeSingle();
             if (!plan.data?.active_version_id)
-                throw new DomainError("INVALID_REQUEST", "This plan has no active version to revise.");
+                throw new DomainError(
+                    "INVALID_REQUEST",
+                    "This plan has no active version to revise.",
+                );
             const planRow = plan.data;
             const activeVersionId = planRow.active_version_id as string;
 
@@ -301,16 +317,16 @@ export const replan = createServerFn({ method: "POST" })
                 await telemetry.recordAiUsage(userId, explanation.meta);
                 if (explanation.data.changes.length > 0) {
                     changeRows = explanation.data.changes.map((c) => ({
-                            user_id: userId,
-                            plan_id: data.planId,
-                            from_version_id: activeVersionId,
-                            to_version_id: versionId,
-                            entity_type: c.entityType,
-                            entity_id: null,
-                            change_type: c.changeType,
-                            before_summary: c.beforeSummary,
-                            after_summary: c.afterSummary,
-                            reason_code: data.reason,
+                        user_id: userId,
+                        plan_id: data.planId,
+                        from_version_id: activeVersionId,
+                        to_version_id: versionId,
+                        entity_type: c.entityType,
+                        entity_id: null,
+                        change_type: c.changeType,
+                        before_summary: c.beforeSummary,
+                        after_summary: c.afterSummary,
+                        reason_code: data.reason,
                     }));
                 }
             } catch {
@@ -358,22 +374,12 @@ export const activatePlanVersion = createServerFn({ method: "POST" })
             .maybeSingle();
         if (!target.data) throw new Error("That plan version could not be found.");
 
-        await supabase
-            .from("plan_versions")
-            .update({ state: "SUPERSEDED" })
-            .eq("plan_id", data.planId)
-            .eq("state", "ACTIVE");
-
-        const { error } = await supabase
-            .from("plan_versions")
-            .update({ state: "ACTIVE" })
-            .eq("id", data.versionId);
+        const { error } = await supabase.rpc("activate_plan_version_for_user", {
+            target_plan_id: data.planId,
+            target_version_id: data.versionId,
+        });
         if (error) throw new Error(error.message);
 
-        await supabase
-            .from("plans")
-            .update({ active_version_id: data.versionId })
-            .eq("id", data.planId);
         await telemetry.recordAudit({
             userId,
             action: "VERSION_ACTIVATED",
