@@ -170,7 +170,7 @@ export async function persistProposal(args: PersistArgs) {
                 plan_id: args.planId,
                 parent_version_id: args.parentVersionId,
                 version_number: args.versionNumber,
-                state: args.activate ? "ACTIVE" : "CANDIDATE",
+                state: "CANDIDATE",
                 scenario: args.scenario,
                 feasibility_score: Math.round(proposal.feasibility.score),
                 confidence_score: Math.round(proposal.confidence.score),
@@ -331,7 +331,11 @@ export async function persistProposal(args: PersistArgs) {
         .eq("id", version.id);
 
     if (args.activate) {
-        await supabase.from("plans").update({ active_version_id: version.id }).eq("id", args.planId);
+        const { error } = await supabase.rpc("activate_plan_version_for_user", {
+            target_plan_id: args.planId,
+            target_version_id: version.id,
+        });
+        if (error) throw new DomainError("INTERNAL_ERROR", `activate plan version: ${error.message}`);
     }
 
     return { versionId: version.id, versionNumber: version.version_number };
