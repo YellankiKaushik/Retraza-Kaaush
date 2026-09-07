@@ -1,4 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
+import { loadEnv } from "vite";
+
+const env = loadEnv(process.env["MODE"] ?? process.env["NODE_ENV"] ?? "test", process.cwd(), "");
+for (const [key, value] of Object.entries(env)) {
+    if (process.env[key] === undefined) process.env[key] = value;
+}
 
 const port = Number(process.env["PLAYWRIGHT_PORT"] ?? 4173);
 const baseURL = process.env["PLAYWRIGHT_BASE_URL"] ?? `http://127.0.0.1:${port}`;
