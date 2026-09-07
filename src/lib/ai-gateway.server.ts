@@ -12,10 +12,10 @@ export const PROVIDER_IDS = ["gemini", "groq", "openrouter", "openai", "lovable-
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 
 const DEFAULT_ROUTE_BY_ALIAS: Record<ModelAlias, ProviderId[]> = {
-    FAST: ["groq", "openrouter", "gemini", "openai"],
-    PRIMARY: ["gemini", "openrouter", "groq", "openai"],
-    CRITIC: ["gemini", "openrouter", "openai"],
-    FALLBACK: ["openrouter", "gemini", "groq", "openai"],
+    FAST: ["groq", "gemini", "openrouter", "openai"],
+    PRIMARY: ["gemini", "groq", "openrouter", "openai"],
+    CRITIC: ["gemini", "groq", "openrouter", "openai"],
+    FALLBACK: ["gemini", "groq", "openrouter", "openai"],
 };
 
 const PROVIDER_CONFIG: Record<
@@ -162,7 +162,6 @@ function createHeaders(providerId: ProviderId, apiKey: string) {
     if (providerId === "lovable-ai") return { "Lovable-API-Key": apiKey };
     if (providerId === "openrouter") {
         return {
-            Authorization: `Bearer ${apiKey}`,
             ...(process.env["OPENROUTER_HTTP_REFERER"]
                 ? { "HTTP-Referer": process.env["OPENROUTER_HTTP_REFERER"]! }
                 : {}),
@@ -179,6 +178,7 @@ function createProvider(providerId: ProviderId, apiKey: string) {
     return createOpenAICompatible({
         name: config.name,
         baseURL: process.env[config.baseUrlEnv] ?? config.defaultBaseUrl,
+        ...(providerId !== "lovable-ai" ? { apiKey } : {}),
         headers: createHeaders(providerId, apiKey),
         supportsStructuredOutputs: true,
     });
