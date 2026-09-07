@@ -4,9 +4,55 @@ import { runIntakeAnalysis, runPlanGeneration } from "@/ai/orchestrator.server";
 import { validateProposal } from "@/lib/planner.server";
 
 const originalEnv = { ...process.env };
+const aiEnvKeys = [
+    "AI_PROVIDER_MODE",
+    "AI_PROVIDER_ALLOWLIST",
+    "AI_ROUTE_FAST",
+    "AI_ROUTE_PRIMARY",
+    "AI_ROUTE_CRITIC",
+    "AI_ROUTE_FALLBACK",
+    "AI_PROVIDER_TIMEOUT_MS",
+    "AI_PROVIDER_MAX_RETRIES",
+    "GEMINI_ENABLED",
+    "GEMINI_API_KEY",
+    "GEMINI_MODEL_DEFAULT",
+    "GEMINI_MODEL_FAST",
+    "GEMINI_MODEL_PRIMARY",
+    "GEMINI_MODEL_CRITIC",
+    "GEMINI_MODEL_FALLBACK",
+    "GROQ_ENABLED",
+    "GROQ_API_KEY",
+    "GROQ_MODEL_DEFAULT",
+    "GROQ_MODEL_FAST",
+    "GROQ_MODEL_PRIMARY",
+    "GROQ_MODEL_CRITIC",
+    "GROQ_MODEL_FALLBACK",
+    "OPENROUTER_ENABLED",
+    "OPENROUTER_API_KEY",
+    "OPENROUTER_MODEL_DEFAULT",
+    "OPENROUTER_MODEL_FAST",
+    "OPENROUTER_MODEL_PRIMARY",
+    "OPENROUTER_MODEL_CRITIC",
+    "OPENROUTER_MODEL_FALLBACK",
+    "OPENAI_ENABLED",
+    "OPENAI_API_KEY",
+    "OPENAI_MODEL_DEFAULT",
+    "OPENAI_MODEL_FAST",
+    "OPENAI_MODEL_PRIMARY",
+    "OPENAI_MODEL_CRITIC",
+    "OPENAI_MODEL_FALLBACK",
+    "LOVABLE_AI_ENABLED",
+    "LOVABLE_API_KEY",
+    "LOVABLE_MODEL_DEFAULT",
+    "LOVABLE_MODEL_FAST",
+    "LOVABLE_MODEL_PRIMARY",
+    "LOVABLE_MODEL_CRITIC",
+    "LOVABLE_MODEL_FALLBACK",
+] as const;
 
 function resetEnv() {
     process.env = { ...originalEnv };
+    for (const key of aiEnvKeys) delete process.env[key];
     vi.unstubAllEnvs();
 }
 
