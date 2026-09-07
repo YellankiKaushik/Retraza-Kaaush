@@ -39,14 +39,14 @@ supabase link --project-ref <your-project-ref>
 supabase db push
 ```
 
-For local Supabase:
+For local Supabase without a global CLI install:
 
 ```sh
-supabase start
-supabase db reset
+npx supabase start
+npx supabase db reset
 ```
 
-Copy the local API URL, anon/publishable key, and service-role key into `.env`. The repository owns the schema under `supabase/migrations/`; Supabase PostgreSQL is the only authoritative structured-data store.
+Copy the local API URL, publishable key, and secret key into `.env`. The repository owns the schema under `supabase/migrations/`; Supabase PostgreSQL is the only authoritative structured-data store. Local Supabase requires Docker; if Docker is not running, `npx supabase start` will report that before tests can use the local database.
 
 ## AI Provider Configuration
 
@@ -54,12 +54,12 @@ AI requests run only on the server. Browser code must never receive provider key
 
 Default route behavior:
 
-- `FAST`: Groq, OpenRouter, Gemini, OpenAI
-- `PRIMARY`: Gemini, OpenRouter, Groq, OpenAI
-- `CRITIC`: Gemini, OpenRouter, OpenAI
-- `FALLBACK`: OpenRouter, Gemini, Groq, OpenAI
+- `FAST`: Groq, Gemini, OpenRouter, OpenAI
+- `PRIMARY`: Gemini, Groq, OpenRouter, OpenAI
+- `CRITIC`: Gemini, Groq, OpenRouter, OpenAI
+- `FALLBACK`: Gemini, Groq, OpenRouter, OpenAI
 
-Set route env vars such as `AI_ROUTE_FAST=groq,openrouter` to override. Set `AI_PROVIDER_ALLOWLIST` to enforce privacy/provider policy; providers outside the allowlist are never used as fallback.
+Set route env vars such as `AI_ROUTE_FAST=groq,gemini,openrouter` to override. Set `AI_PROVIDER_ALLOWLIST` to enforce privacy/provider policy; providers outside the allowlist are never used as fallback.
 
 Enable a provider only when you have configured both its key and model:
 
@@ -125,13 +125,27 @@ Normal tests use deterministic mock AI and do not require paid provider calls.
 
 Optional live checks:
 
+PowerShell:
+
+```powershell
+$env:RUN_LIVE_AI_SMOKE="true"; npm run test:integration
+$env:RUN_SUPABASE_RLS_TESTS="true"; npm run test:integration
+$env:RUN_E2E_GOLDEN="true"; npm run test:e2e
+```
+
+Unix shells:
+
 ```sh
 RUN_LIVE_AI_SMOKE=true npm run test:integration
 RUN_SUPABASE_RLS_TESTS=true npm run test:integration
 RUN_E2E_GOLDEN=true npm run test:e2e
 ```
 
-Live Supabase RLS tests require `SUPABASE_TEST_URL`, `SUPABASE_TEST_ANON_KEY`, and `SUPABASE_TEST_SERVICE_ROLE_KEY`. Live AI smoke tests require the target provider key and model env var. The authenticated E2E Golden Path requires a test Supabase project with migrations applied and `AI_PROVIDER_MODE=mock`.
+Vitest and Playwright load `.env` for live test configuration. For normal MVP verification, live Supabase tests use `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`. Optional `SUPABASE_TEST_URL`, `SUPABASE_TEST_PUBLISHABLE_KEY`, and `SUPABASE_TEST_SECRET_KEY` override those values when you want to point tests elsewhere; legacy `SUPABASE_TEST_ANON_KEY` and `SUPABASE_TEST_SERVICE_ROLE_KEY` are supported only as fallbacks. Live AI smoke tests require the target provider key and model env var.
+
+Live Supabase tests are safe for the shared MVP project: they create unique temporary users and test-owned rows, delete only those users at cleanup, and never truncate, drop, reset, or bulk-delete unrelated data. The authenticated E2E Golden Path runs the app against the same configured Supabase values and uses live Gemini/Groq routing; OpenRouter remains an optional fallback.
+
+If Supabase CLI authentication is unavailable while bootstrapping the remote schema, run [supabase/FINAL_REMOTE_BOOTSTRAP.sql](supabase/FINAL_REMOTE_BOOTSTRAP.sql) once in the Supabase SQL Editor for the target project. That file is generated from the committed migrations and does not include destructive reset/delete operations.
 
 ## Security Notes
 
