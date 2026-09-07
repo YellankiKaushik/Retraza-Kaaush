@@ -22,6 +22,9 @@ test-results
 .wrangler/
 .dev.vars
 
+# Supabase CLI local state
+supabase/.temp/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -32,6 +35,7 @@ test-results
 *.njsproj
 *.sln
 *.sw?
-.env
-.env.*
 !.env.example
+.env
+.env.local
+.env.*.local
