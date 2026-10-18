@@ -61,13 +61,14 @@ export async function assertWithinQuota(
     windowHours: number,
 ) {
     const since = new Date(Date.now() - windowHours * 3600_000).toISOString();
-    const { count } = await supabaseAdmin
+    const { count, error } = await supabaseAdmin
         .from("ai_usage_events")
         .select("id", { count: "exact", head: true })
         .eq("user_id", userId)
         .eq("operation", operation)
-        .eq("outcome", "SUCCESS")
         .gte("created_at", since);
+
+    if (error) throw new Error("AI usage could not be checked. Please try again later.");
 
     if ((count ?? 0) >= max) {
         const error = new Error(
@@ -80,6 +81,14 @@ export async function assertWithinQuota(
 
 /** Idempotency for AI and other expensive writes. */
 export async function claimIdempotencyKey(userId: string, operation: string, key: string) {
+    // The unique constraint is the lock: only the successful insert owns work.
+    const inserted = await supabaseAdmin
+        .from("idempotency_keys")
+        .insert({ user_id: userId, operation, key });
+    if (!inserted.error) return { replay: null };
+    if (inserted.error.code !== "23505")
+        throw new Error("This request could not be reserved. Please try again later.");
+
     const existing = await supabaseAdmin
         .from("idempotency_keys")
         .select("result_reference")
@@ -88,11 +97,11 @@ export async function claimIdempotencyKey(userId: string, operation: string, key
         .eq("key", key)
         .maybeSingle();
 
-    if (existing.data)
-        return { replay: existing.data.result_reference as Record<string, unknown> | null };
-
-    await supabaseAdmin.from("idempotency_keys").insert({ user_id: userId, operation, key });
-    return { replay: null };
+    if (existing.error)
+        throw new Error("This request could not be checked. Please try again later.");
+    if (existing.data?.result_reference)
+        return { replay: existing.data.result_reference as Record<string, unknown> };
+    throw new Error("This request is already processing. Wait for it to finish before retrying.");
 }
 
 export async function completeIdempotencyKey(
@@ -101,12 +110,19 @@ export async function completeIdempotencyKey(
     key: string,
     result: Record<string, unknown>,
 ) {
-    await supabaseAdmin
+    const { error } = await supabaseAdmin
         .from("idempotency_keys")
         .update({ result_reference: result as never })
         .eq("user_id", userId)
         .eq("operation", operation)
         .eq("key", key);
+    if (error) {
+        const failure = new Error(
+            "The result was saved, but its request receipt could not be recorded. Refresh before retrying.",
+        ) as Error & { preserveClaim: boolean };
+        failure.preserveClaim = true;
+        throw failure;
+    }
 }
 
 export async function releaseIdempotencyKey(userId: string, operation: string, key: string) {

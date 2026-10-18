@@ -29,6 +29,7 @@ export const Route = createFileRoute("/new")({
 });
 
 const EXAMPLES = [
+    "I want to become a product manager in six months. I work full-time, have no formal PM experience, and can dedicate 10 hours every week.",
     "I want to move to Berlin next year but I don't know if I can afford it",
     "Our team keeps missing deadlines and I can't tell why",
     "Should I do a masters or take the junior role I was offered?",
@@ -47,6 +48,7 @@ function NewObjective() {
     }, [loading, user, navigate]);
 
     async function submit() {
+        if (busy || loading || !user) return;
         if (text.trim().length < 8) {
             toast.error("Add a little more detail so the plan isn't guesswork.");
             return;
@@ -79,12 +81,13 @@ function NewObjective() {
                 <p className="label-mono">Intake</p>
                 <h1 className="mt-2 text-2xl font-semibold">What are you trying to reach?</h1>
                 <p className="mt-2 text-sm text-muted-foreground">
-                    Write it the way you'd say it out loud. Vague is fine — ReversePath will ask only the
-                    questions that would change the plan.
+                    Write it the way you'd say it out loud. Vague is fine — ReversePath will ask
+                    only the questions that would change the plan.
                 </p>
 
                 <div className="panel mt-6 p-5">
                     <Textarea
+                        aria-label="Your objective"
                         value={text}
                         onChange={(e) => setText(e.target.value)}
                         rows={7}
@@ -96,7 +99,10 @@ function NewObjective() {
                         <span className="font-mono text-[11px] text-muted-foreground">
                             {text.length} / 10000
                         </span>
-                        <Button onClick={submit} disabled={busy}>
+                        <Button
+                            onClick={submit}
+                            disabled={busy || loading || !user || text.trim().length < 8}
+                        >
                             {busy ? "Reading your objective…" : "Analyse objective"}
                         </Button>
                     </div>

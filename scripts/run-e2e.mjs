@@ -1,14 +1,11 @@
 import { spawn } from "node:child_process";
 import { loadEnv } from "vite";
+import { assertRequestedDatabaseTestsAreSafe } from "./test-environment.mjs";
 
 function loadProjectEnv() {
     const mode = process.env.MODE ?? process.env.NODE_ENV ?? "test";
     const env = loadEnv(mode, process.cwd(), "");
     for (const [key, value] of Object.entries(env)) {
-        if (key.startsWith("SUPABASE_TEST_")) {
-            process.env[key] = value;
-            continue;
-        }
         if (process.env[key] === undefined) process.env[key] = value;
     }
 }
@@ -39,7 +36,9 @@ function testSecretKey() {
 }
 
 function supabaseTestUrl() {
-    return process.env.SUPABASE_TEST_URL || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    return (
+        process.env.SUPABASE_TEST_URL || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
+    );
 }
 
 function hasSupabaseLiveTestCredentials() {
@@ -47,6 +46,7 @@ function hasSupabaseLiveTestCredentials() {
 }
 
 loadProjectEnv();
+assertRequestedDatabaseTestsAreSafe();
 
 const port = Number(process.env.PLAYWRIGHT_PORT ?? 4173);
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${port}`;
@@ -63,7 +63,7 @@ async function waitForServer(url, timeoutMs = 120_000) {
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
         try {
-            const response = await fetch(url);
+            const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
             if (response.ok) return;
         } catch {
             await new Promise((resolve) => setTimeout(resolve, 500));
@@ -78,7 +78,7 @@ async function run() {
 
     const serverEnv = {
         ...process.env,
-        AI_PROVIDER_MODE: process.env.AI_PROVIDER_MODE ?? "mock",
+        AI_PROVIDER_MODE: "mock",
         VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL ?? "http://127.0.0.1:54321",
         VITE_SUPABASE_PUBLISHABLE_KEY:
             process.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "test-publishable-key",
@@ -87,12 +87,9 @@ async function run() {
     };
 
     if (runGolden && hasSupabaseLiveTestCredentials()) {
-        serverEnv.AI_PROVIDER_MODE = "live";
-        serverEnv.AI_PROVIDER_ALLOWLIST = "gemini,groq";
-        serverEnv.AI_ROUTE_FAST = "groq,gemini";
-        serverEnv.AI_ROUTE_PRIMARY = "gemini,groq";
-        serverEnv.AI_ROUTE_CRITIC = "gemini,groq";
-        serverEnv.AI_ROUTE_FALLBACK = "gemini,groq";
+        serverEnv.AI_PROVIDER_MODE = ["live", "free-first"].includes(process.env.AI_PROVIDER_MODE)
+            ? "live"
+            : "mock";
         serverEnv.VITE_SUPABASE_URL = supabaseTestUrl();
         serverEnv.VITE_SUPABASE_PUBLISHABLE_KEY = testPublishableKey();
         serverEnv.SUPABASE_URL = supabaseTestUrl();
@@ -120,7 +117,11 @@ async function run() {
         if (server) await waitForServer(baseURL);
         const args = ["./node_modules/@playwright/test/cli.js", "test", ...process.argv.slice(2)];
         const testProcess = spawnNode(args, {
-            env: { ...process.env, PLAYWRIGHT_BASE_URL: baseURL },
+            env: {
+                ...process.env,
+                AI_PROVIDER_MODE: serverEnv.AI_PROVIDER_MODE,
+                PLAYWRIGHT_BASE_URL: baseURL,
+            },
         });
         const code = await new Promise((resolve) => testProcess.on("exit", resolve));
         process.exitCode = typeof code === "number" ? code : 1;

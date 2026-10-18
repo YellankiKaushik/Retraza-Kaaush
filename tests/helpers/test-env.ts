@@ -1,25 +1,25 @@
 import { loadEnv } from "vite";
+import { assertRequestedDatabaseTestsAreSafe } from "../../scripts/test-environment.mjs";
 
 let loaded = false;
 
 export function loadProjectEnv() {
     if (loaded) return;
-    loaded = true;
 
     const mode = process.env["MODE"] ?? process.env["NODE_ENV"] ?? "test";
     const env = loadEnv(mode, process.cwd(), "");
     for (const [key, value] of Object.entries(env)) {
-        if (key.startsWith("SUPABASE_TEST_")) {
-            process.env[key] = value;
-            continue;
-        }
         if (process.env[key] === undefined) process.env[key] = value;
     }
+    assertRequestedDatabaseTestsAreSafe();
+    loaded = true;
 }
 
 export function testPublishableKey() {
     if (!process.env["SUPABASE_TEST_URL"]) {
-        return process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
+        return (
+            process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"]
+        );
     }
 
     return (
@@ -43,7 +43,11 @@ export function testSecretKey() {
 }
 
 export function supabaseTestUrl() {
-    return process.env["SUPABASE_TEST_URL"] || process.env["SUPABASE_URL"] || process.env["VITE_SUPABASE_URL"];
+    return (
+        process.env["SUPABASE_TEST_URL"] ||
+        process.env["SUPABASE_URL"] ||
+        process.env["VITE_SUPABASE_URL"]
+    );
 }
 
 export function hasSupabaseLiveTestCredentials() {

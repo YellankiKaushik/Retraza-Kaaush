@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+node_modules
+.output
+.wrangler
+.git
+.vercel
+test-results
+playwright-report
+logs
+*.log

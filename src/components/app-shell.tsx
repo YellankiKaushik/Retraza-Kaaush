@@ -11,7 +11,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     return (
         <div className="min-h-screen blueprint-grid">
             <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur">
-                <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
+                <div className="mx-auto flex min-h-14 max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-2 sm:h-14 sm:flex-nowrap sm:py-0">
                     <Link to="/" className="flex items-center gap-2.5">
                         <span className="grid size-7 place-items-center rounded border border-border-strong bg-secondary font-mono text-xs text-primary">
                             RP
@@ -55,8 +55,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
             <footer className="border-t border-border px-4 py-6">
                 <p className="mx-auto max-w-6xl text-xs text-muted-foreground">
-                    ReversePath produces reasoned plans, not professional advice. For medical, legal, or
-                    financial decisions, verify with a qualified professional.
+                    ReversePath produces reasoned plans, not professional advice. For medical,
+                    legal, or financial decisions, verify with a qualified professional.
                 </p>
             </footer>
         </div>

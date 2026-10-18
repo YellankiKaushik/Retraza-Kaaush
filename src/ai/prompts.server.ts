@@ -16,6 +16,21 @@ DOMAIN POLICY
 - Output concise rationale only. Never output hidden chain-of-thought.
 `.trim();
 
+export const COMPACT_PLANNING_PROFILE = `
+COMPACT FREE-AI PLANNING PROFILE
+- Produce exactly 2 materially different strategies and recommend exactly 1.
+- Use 3-5 milestones for the recommended strategy and 6-12 ACTION/EXPERIMENT nodes total. Prefer 3 milestones and 6 actions, with at least one executable branch for the alternative strategy.
+- Target 18-22 total nodes; stay within 24 unless essential for correctness. Use at most 48 edges, preferably 20-30. Do not invent extra work to fill a quota.
+- Include only essential objective, requirements, resources, constraints, gaps and measures. Do not duplicate assumptions, risks or strategies as graph nodes when their dedicated records suffice.
+- Include 3-5 assumptions and 3-5 risks, preferably 3 each. Link HIGH assumptions to real validating action/experiment ids.
+- Keep titles within 8 words, node descriptions within 16 words, and action expectedResult/completionCriteria within 12 words each. Make the completion test concrete.
+- Each strategy gets a brief summary, at most 25 words of rationale and 2 short tradeoffs. Use at most 2 concise feasibility reasons and 2 confidence reasons. Summary: at most 35 words.
+- Identify one clear current bottleneck, citing an existing node; use null only when evidence is insufficient and explain briefly.
+- Intentionally build a complete small VALID graph; never rely on downstream truncation or repair. Every dependency branch must resolve to an executable action, experiment or explicit BLOCKER. At least one action must be executable now with no unmet hard prerequisite.
+- Use short unique ids. Reference only ids/strategy keys actually declared. Direct prerequisite -> dependent edges consistently; keep hard dependencies acyclic. Connect every branch to its strategy or the objective.
+- Include every schema-required field, using null only for nullable fields. Give no prose outside JSON, no repeated explanations and no chain-of-thought. Spend the response budget on the final concise JSON.
+`.trim();
+
 export function intakePrompt(input: { rawText: string; timezone?: string; locale?: string }) {
     return {
         system: `You are the intake and clarification stage of ReversePath, a reverse-engineering planning system. You classify what a person actually wants, judge whether you know enough to plan, and ask only the questions that would materially change the plan.
@@ -56,7 +71,7 @@ METHOD
 1. Anchor on the desired outcome. Create exactly one OBJECTIVE node.
 2. Work BACKWARDS: what must be true immediately before the outcome? Then before that. Express these as REQUIREMENT, RESOURCE, CONSTRAINT and METRIC nodes.
 3. Compare required conditions against what the user actually has. Every unmet condition becomes a GAP node.
-4. Propose 2-3 MATERIALLY DIFFERENT strategies (different mechanism, cost profile or risk profile - not cosmetic rewordings). Give each a rationale and honest trade-offs. Mark exactly one as recommended and explain why in its rationale.
+4. Propose exactly 2 MATERIALLY DIFFERENT strategies (different mechanism, cost profile or risk profile - not cosmetic rewordings). Give each a rationale and honest trade-offs. Mark exactly one as recommended and explain why in its rationale.
 5. Decompose the recommended strategy into ordered MILESTONE nodes, then into ACTION nodes. Where a key uncertainty could be cheaply tested, add an EXPERIMENT node instead of a large commitment.
 6. Every ACTION/EXPERIMENT must have a verb, an object, an expected result, and a checkable completionCriteria. "Work harder", "be consistent", "research more" are forbidden as actions.
 7. Identify the single current BOTTLENECK: the one constraint that most limits progress right now. If evidence is insufficient, say so in bottleneckReason and set bottleneckTempId to null.
@@ -71,6 +86,8 @@ GRAPH RULES
 - Rate each node: impact 1-5, urgency 1-5, effortCost 0.5-5, successLikelihood 0-1. Be discriminating; do not give everything a 3.
 - Scenario ${input.scenario}: CONSERVATIVE = protect downside, smaller steps; BALANCED = pragmatic default; AGGRESSIVE = faster, accepts more risk. Reflect this in strategy choice, step size and risk tolerance.
 - If you genuinely cannot produce an actionable plan, still produce the graph you can and set blocker to the specific information or condition required.
+
+${COMPACT_PLANNING_PROFILE}
 
 ${POLICY_BLOCK}`,
         prompt: `Intent type: ${input.intentType}
@@ -106,7 +123,7 @@ export function replanPrompt(input: {
         system: `${base.system}
 
 REPLAN MODE
-You are revising an existing plan, not starting from zero. Preserve what still holds: keep the same titles for still-valid nodes so the diff stays readable. Change only what the new information actually invalidates, and re-derive the bottleneck and the frontier from the updated reality. Completed work must never be re-proposed.`,
+You are revising an existing plan, not starting from zero. Preserve what still holds: keep the same titles for still-valid nodes so the diff stays readable. Change only what the new information actually invalidates, and re-derive the bottleneck and the frontier from the updated reality. Completed work must never be re-proposed. Apply the SAME compact profile; do not grow the graph by copying old and new variants of the same work.`,
         prompt: `${base.prompt}
 
 Replan reason: ${input.reason}
@@ -119,7 +136,7 @@ ${input.previous}`,
 
 export function changeExplanationPrompt(input: { before: string; after: string; reason: string }) {
     return {
-        system: `You explain plan changes to the person who owns the plan. Be concrete and short. Only describe differences that are actually present in the two snapshots. No speculation, no hidden reasoning.`,
+        system: `You explain plan changes to the person who owns the plan. Be concrete and short: one brief headline and at most 5 material changes, each reason within 20 words. Only describe differences that are actually present in the two snapshots. No speculation, no hidden reasoning.`,
         prompt: `Replan reason: ${input.reason}
 
 BEFORE

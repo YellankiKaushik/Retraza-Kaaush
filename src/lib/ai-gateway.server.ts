@@ -1,4 +1,5 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { createGoogle } from "@ai-sdk/google";
 import type { LanguageModel } from "ai";
 
 /**
@@ -114,33 +115,54 @@ function parseProviderList(value: string | undefined): ProviderId[] {
 }
 
 export function isMockAiEnabled() {
-    return process.env["AI_PROVIDER_MODE"]?.toLowerCase() === "mock";
+    return !["live", "free-first"].includes(process.env["AI_PROVIDER_MODE"]?.toLowerCase() ?? "");
 }
 
 function allowedProviders() {
     const configured = parseProviderList(process.env["AI_PROVIDER_ALLOWLIST"]);
-    return configured.length ? new Set(configured) : new Set(PROVIDER_IDS);
+    return process.env["AI_PROVIDER_ALLOWLIST"]?.trim()
+        ? new Set(configured)
+        : new Set<ProviderId>(["gemini", "groq"]);
 }
 
 export function routeForAlias(alias: ModelAlias) {
     const configured = parseProviderList(process.env[`AI_ROUTE_${alias}`]);
-    return configured.length ? configured : DEFAULT_ROUTE_BY_ALIAS[alias];
+    return process.env[`AI_ROUTE_${alias}`]?.trim() ? configured : DEFAULT_ROUTE_BY_ALIAS[alias];
 }
 
 export function timeoutMs() {
     const parsed = Number(process.env["AI_PROVIDER_TIMEOUT_MS"]);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : 90_000;
+    return Number.isFinite(parsed) && parsed > 0 ? Math.min(300_000, Math.floor(parsed)) : 90_000;
 }
 
 export function maxProviderRetries() {
     const parsed = Number(process.env["AI_PROVIDER_MAX_RETRIES"]);
-    if (!Number.isFinite(parsed) || parsed < 0) return 1;
-    return Math.min(3, Math.floor(parsed));
+    if (!Number.isFinite(parsed) || parsed < 0) return 0;
+    return Math.min(2, Math.floor(parsed));
 }
 
 export function maxOutputTokens() {
     const parsed = Number(process.env["AI_MAX_OUTPUT_TOKENS"]);
-    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : 12_000;
+    return Number.isSafeInteger(parsed) && parsed > 0 ? Math.min(16_384, parsed) : 12_000;
+}
+
+export function retryDelayMs(error: unknown, attempt: number): number | undefined {
+    const failure = error as {
+        statusCode?: number;
+        status?: number;
+        responseHeaders?: Record<string, string>;
+    } | null;
+    if (![429, 503].includes(failure?.statusCode ?? failure?.status ?? 0) || attempt >= 2)
+        return undefined;
+    const header = failure?.responseHeaders?.["retry-after"];
+    const seconds = header ? Number(header) : NaN;
+    const wait = Number.isFinite(seconds)
+        ? seconds * 1000
+        : header
+          ? Date.parse(header) - Date.now()
+          : 0;
+    if (wait > 60_000) return undefined;
+    return Math.max(Number.isFinite(wait) ? wait : 0, attempt === 0 ? 2000 : 5000);
 }
 
 export function modelEnvName(providerId: ProviderId, alias: ModelAlias) {
@@ -180,6 +202,14 @@ function createHeaders(providerId: ProviderId, apiKey: string) {
 
 function createProvider(providerId: ProviderId, apiKey: string) {
     const config = PROVIDER_CONFIG[providerId];
+    if (providerId === "gemini") {
+        return createGoogle({
+            apiKey,
+            baseURL: (
+                process.env["GEMINI_BASE_URL"] || "https://generativelanguage.googleapis.com/v1beta"
+            ).replace(/\/openai\/?$/, ""),
+        });
+    }
     return createOpenAICompatible({
         name: config.name,
         baseURL: process.env[config.baseUrlEnv] ?? config.defaultBaseUrl,
@@ -220,6 +250,7 @@ export interface AiFailure {
         | "AI_PROVIDER_TIMEOUT"
         | "AI_RATE_LIMITED"
         | "AI_SCHEMA_INVALID"
+        | "AI_GRAPH_INVALID"
         | "AI_POLICY_REJECTED"
         | "AI_BUDGET_EXCEEDED"
         | "AI_UNAVAILABLE";
@@ -230,9 +261,17 @@ export interface AiFailure {
 /** Maps gateway/provider failures onto the documented error model. */
 export function classifyAiError(error: unknown): AiFailure {
     const anyErr = error as
-        { statusCode?: number; status?: number; name?: string; message?: string } | undefined;
+        | { statusCode?: number; status?: number; name?: string; message?: string; code?: string }
+        | undefined;
     const status = anyErr?.statusCode ?? anyErr?.status;
     const message = anyErr?.message ?? "The planning engine could not complete this request.";
+
+    if (anyErr?.code === "PLAN_VALIDATION_FAILED")
+        return {
+            code: "AI_GRAPH_INVALID",
+            message: "The planning engine returned an invalid dependency graph. Please try again.",
+            retryable: false,
+        };
 
     if (status === 429)
         return {
@@ -264,9 +303,8 @@ export function classifyAiError(error: unknown): AiFailure {
     if (status === 400 || /schema|zod|json|parse|object generated|malformed/i.test(message))
         return {
             code: "AI_SCHEMA_INVALID",
-            message:
-                "The planning engine returned malformed structured output. Trying another configured provider.",
-            retryable: true,
+            message: "The planning engine returned invalid structured output. Please try again.",
+            retryable: false,
         };
     if (status && status >= 500)
         return {
@@ -281,5 +319,9 @@ export function classifyAiError(error: unknown): AiFailure {
             retryable: true,
         };
 
-    return { code: "AI_UNAVAILABLE", message, retryable: true };
+    return {
+        code: "AI_UNAVAILABLE",
+        message: "The planning engine could not complete this request. Saved plans still work.",
+        retryable: true,
+    };
 }

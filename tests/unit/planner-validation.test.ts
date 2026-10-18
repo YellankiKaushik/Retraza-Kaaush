@@ -107,6 +107,11 @@ function expectDomainFailure(fn: () => unknown, message: RegExp) {
 }
 
 describe("validateProposal", () => {
+    it("rejects duplicate strategy keys before graph persistence", () => {
+        const proposal = validProposal();
+        proposal.strategies[1]!.key = proposal.strategies[0]!.key;
+        expectDomainFailure(() => validateProposal(proposal), /duplicate strategy keys/i);
+    });
     it("accepts a graph with one objective, strategies, dependencies and an executable action", () => {
         const validated = validateProposal(validProposal());
 

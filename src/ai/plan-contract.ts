@@ -14,7 +14,7 @@ import { z } from "zod";
 
 import { BANDS, EDGE_TYPES, INTENT_TYPES, NODE_TYPES } from "@/domain/types";
 
-export const PROMPT_VERSION = "v1";
+export const PROMPT_VERSION = "v2-compact";
 
 /** String, truncated to a hard maximum after generation. */
 const text = (max: number) => z.string().transform((value) => value.trim().slice(0, max));

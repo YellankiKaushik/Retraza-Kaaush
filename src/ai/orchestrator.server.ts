@@ -3,8 +3,10 @@
  * Builds minimised context, applies versioned prompts, validates every proposal
  * against the schema before anything is persisted, and records telemetry.
  */
-import { generateObject } from "ai";
+import { generateObject, NoObjectGeneratedError } from "ai";
 import type { z } from "zod";
+import { validateProposal } from "@/lib/planner.server";
+import { logAiDiagnostics, type AiDiagnostics } from "./diagnostics.server";
 
 import {
     candidatesForAlias,
@@ -12,6 +14,7 @@ import {
     isMockAiEnabled,
     maxProviderRetries,
     maxOutputTokens,
+    retryDelayMs,
     timeoutMs,
     type AiAttemptTelemetry,
     type ModelAlias,
@@ -53,6 +56,7 @@ export interface AiCallMeta {
     schemaValid: boolean;
     correlationId: string;
     attempts: AiAttemptTelemetry[];
+    diagnostics?: AiDiagnostics;
 }
 
 export interface AiCallResult<T> {
@@ -68,12 +72,15 @@ async function callModel<S extends z.ZodType>(args: {
     prompt: string;
     correlationId: string;
     mock: () => z.infer<S>;
+    validateGraph?: (data: z.infer<S>) => unknown;
 }): Promise<AiCallResult<z.infer<S>>> {
     const started = Date.now();
 
     if (isMockAiEnabled()) {
+        const data = args.schema.parse(args.mock());
+        args.validateGraph?.(data);
         return {
-            data: args.schema.parse(args.mock()),
+            data,
             meta: {
                 operation: args.operation,
                 provider: "mock",
@@ -121,20 +128,56 @@ async function callModel<S extends z.ZodType>(args: {
 
     const attempts: AiAttemptTelemetry[] = [];
     let lastFailure = classifyAiError(new Error("AI is temporarily unavailable."));
+    let diagnostic: AiDiagnostics | undefined;
+    let inputTokens: number | null = null;
 
     for (const candidate of candidates) {
         for (let attempt = 0; attempt <= maxProviderRetries(); attempt += 1) {
             const attemptStarted = Date.now();
+            diagnostic = {
+                providerModel: candidate.modelId,
+                outputTokens: null,
+                finishReason: null,
+                schemaValid: null,
+                graphValid: null,
+                timedOut: false,
+            };
+            inputTokens = null;
             try {
                 const result = await generateObject({
                     model: candidate.model,
                     schema: args.schema,
                     system: args.system,
                     prompt: args.prompt,
+                    ...(candidate.providerId === "gemini"
+                        ? {
+                              providerOptions: {
+                                  google: {
+                                      structuredOutputs: true,
+                                      thinkingConfig: {
+                                          thinkingLevel: "low" as const,
+                                          includeThoughts: false,
+                                      },
+                                  },
+                              },
+                          }
+                        : {}),
                     maxRetries: 0,
                     maxOutputTokens: maxOutputTokens(),
                     abortSignal: AbortSignal.timeout(timeoutMs()),
                 });
+
+                inputTokens = result.usage?.inputTokens ?? null;
+                diagnostic.outputTokens = result.usage?.outputTokens ?? null;
+                diagnostic.finishReason = result.finishReason;
+                const data = args.schema.parse(result.object);
+                diagnostic.schemaValid = true;
+                if (args.validateGraph) {
+                    diagnostic.graphValid = false;
+                    args.validateGraph(data);
+                    diagnostic.graphValid = true;
+                }
+                logAiDiagnostics(args.operation, diagnostic);
 
                 attempts.push({
                     provider: candidate.providerName,
@@ -147,7 +190,7 @@ async function callModel<S extends z.ZodType>(args: {
                 });
 
                 return {
-                    data: args.schema.parse(result.object),
+                    data,
                     meta: {
                         operation: args.operation,
                         provider: candidate.providerName,
@@ -161,10 +204,24 @@ async function callModel<S extends z.ZodType>(args: {
                         schemaValid: true,
                         correlationId: args.correlationId,
                         attempts,
+                        diagnostics: diagnostic,
                     },
                 };
             } catch (error) {
+                if (NoObjectGeneratedError.isInstance(error)) {
+                    inputTokens = error.usage?.inputTokens ?? null;
+                    diagnostic.outputTokens = error.usage?.outputTokens ?? null;
+                    diagnostic.finishReason = error.finishReason ?? null;
+                    diagnostic.schemaValid = false;
+                }
                 lastFailure = classifyAiError(error);
+                diagnostic.timedOut =
+                    error instanceof Error &&
+                    (["AbortError", "TimeoutError"].includes(error.name) ||
+                        /timeout|timed out|aborted/i.test(error.message));
+                if ([408, 504].includes((error as { statusCode?: number })?.statusCode ?? 0))
+                    diagnostic.timedOut = true;
+                logAiDiagnostics(args.operation, diagnostic);
                 attempts.push({
                     provider: candidate.providerName,
                     modelAlias: candidate.modelAlias,
@@ -175,6 +232,11 @@ async function callModel<S extends z.ZodType>(args: {
                     retryable: lastFailure.retryable,
                 });
                 if (!lastFailure.retryable) break;
+                if (attempt < maxProviderRetries()) {
+                    const delay = retryDelayMs(error, attempt);
+                    if (delay === undefined) break;
+                    await new Promise((resolve) => setTimeout(resolve, delay));
+                }
             }
         }
     }
@@ -197,12 +259,13 @@ async function callModel<S extends z.ZodType>(args: {
         providerModel: attempts.at(-1)?.modelId ?? null,
         promptVersion: PROMPT_VERSION,
         latencyMs: Date.now() - started,
-        inputTokens: null,
-        outputTokens: null,
+        inputTokens,
+        outputTokens: diagnostic?.outputTokens ?? null,
         outcome: lastFailure.code,
-        schemaValid: lastFailure.code !== "AI_SCHEMA_INVALID",
+        schemaValid: diagnostic?.schemaValid === true,
         correlationId: args.correlationId,
         attempts,
+        ...(diagnostic ? { diagnostics: diagnostic } : {}),
     };
     throw enriched;
 }
@@ -237,6 +300,7 @@ export function runPlanGeneration(
         prompt,
         correlationId: input.correlationId,
         mock: () => mockPlanProposal(input),
+        validateGraph: validateProposal,
     });
 }
 
@@ -252,6 +316,7 @@ export function runReplan(
         prompt,
         correlationId: input.correlationId,
         mock: () => mockPlanProposal({ ...input, replan: true }),
+        validateGraph: validateProposal,
     });
 }
 

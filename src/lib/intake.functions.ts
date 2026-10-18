@@ -120,7 +120,8 @@ export const createIntake = createServerFn({ method: "POST" })
             });
             return result;
         } catch (error) {
-            await telemetry.releaseIdempotencyKey(userId, "CREATE_INTAKE", data.idempotencyKey);
+            if (!(error as Error & { preserveClaim?: boolean }).preserveClaim)
+                await telemetry.releaseIdempotencyKey(userId, "CREATE_INTAKE", data.idempotencyKey);
             const err = error as Error & { code?: string; meta?: never };
             if (err.code && err.code.startsWith("AI_")) {
                 const withMeta = error as Error & {

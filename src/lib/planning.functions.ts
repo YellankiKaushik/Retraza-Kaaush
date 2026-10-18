@@ -135,6 +135,7 @@ export const generatePlan = createServerFn({ method: "POST" })
                 parentVersionId: null,
                 versionNumber,
                 modelAlias: meta.modelAlias,
+                generationSource: { provider: meta.provider, model: meta.providerModel },
                 promptVersion: PROMPT_VERSION,
                 activate: true,
                 strategyPreference: data.strategyPreference,
@@ -162,7 +163,8 @@ export const generatePlan = createServerFn({ method: "POST" })
             });
             return result;
         } catch (error) {
-            await telemetry.releaseIdempotencyKey(userId, "GENERATE_PLAN", data.idempotencyKey);
+            if (!(error as Error & { preserveClaim?: boolean }).preserveClaim)
+                await telemetry.releaseIdempotencyKey(userId, "GENERATE_PLAN", data.idempotencyKey);
             const err = error as Error & {
                 code?: string;
                 meta?: Parameters<typeof telemetry.recordAiUsage>[1];
@@ -278,6 +280,7 @@ export const replan = createServerFn({ method: "POST" })
                 parentVersionId: activeVersionId,
                 versionNumber,
                 modelAlias: meta.modelAlias,
+                generationSource: { provider: meta.provider, model: meta.providerModel },
                 promptVersion: PROMPT_VERSION,
                 activate: false,
             });
@@ -348,7 +351,8 @@ export const replan = createServerFn({ method: "POST" })
             });
             return result;
         } catch (error) {
-            await telemetry.releaseIdempotencyKey(userId, "REPLAN", data.idempotencyKey);
+            if (!(error as Error & { preserveClaim?: boolean }).preserveClaim)
+                await telemetry.releaseIdempotencyKey(userId, "REPLAN", data.idempotencyKey);
             const err = error as Error & { meta?: Parameters<typeof telemetry.recordAiUsage>[1] };
             if (err.meta) await telemetry.recordAiUsage(userId, err.meta);
             throw new Error(err.message);
@@ -411,16 +415,10 @@ export const selectStrategy = createServerFn({ method: "POST" })
     )
     .handler(async ({ data, context }) => {
         const { supabase, userId } = context;
-        await supabase
-            .from("strategies")
-            .update({ selected: false })
-            .eq("plan_version_id", data.versionId)
-            .eq("user_id", userId);
-        const { error } = await supabase
-            .from("strategies")
-            .update({ selected: true })
-            .eq("id", data.strategyId)
-            .eq("user_id", userId);
+        const { error } = await supabase.rpc("select_plan_strategy", {
+            target_version_id: data.versionId,
+            target_strategy_id: data.strategyId,
+        });
         if (error) throw new Error(error.message);
 
         const telemetry = await import("@/lib/telemetry.server");

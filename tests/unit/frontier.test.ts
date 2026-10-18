@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { computeFrontier, progressOf } from "@/domain/frontier";
+import {
+    computeFrontier,
+    progressOf,
+    findHardCycle,
+    executionNodesForStrategy,
+} from "@/domain/frontier";
 import type { GraphEdge, GraphNode } from "@/domain/types";
 
 const node = (overrides: Partial<GraphNode> & Pick<GraphNode, "id" | "title">): GraphNode => ({
@@ -15,7 +20,9 @@ const node = (overrides: Partial<GraphNode> & Pick<GraphNode, "id" | "title">): 
     metadata: overrides.metadata ?? {},
 });
 
-const edge = (overrides: Partial<GraphEdge> & Pick<GraphEdge, "from_node_id" | "to_node_id">): GraphEdge => ({
+const edge = (
+    overrides: Partial<GraphEdge> & Pick<GraphEdge, "from_node_id" | "to_node_id">,
+): GraphEdge => ({
     id: overrides.id ?? crypto.randomUUID(),
     from_node_id: overrides.from_node_id,
     to_node_id: overrides.to_node_id,
@@ -25,8 +32,41 @@ const edge = (overrides: Partial<GraphEdge> & Pick<GraphEdge, "from_node_id" | "
 });
 
 describe("computeFrontier", () => {
+    it("executes the selected strategy without requiring alternative-route work", () => {
+        const nodes = [
+            node({ id: "shared", title: "Shared prerequisite", status: "DONE" }),
+            node({ id: "a", title: "Route A", strategy_id: "A" }),
+            node({ id: "b", title: "Route B", strategy_id: "B" }),
+        ];
+        const edges = [edge({ from_node_id: "shared", to_node_id: "a" })];
+        const chosen = executionNodesForStrategy(nodes, edges, "A");
+        expect(computeFrontier(chosen, edges).ready.map((c) => c.node.id)).toEqual(["a"]);
+        expect(progressOf(chosen)).toEqual({ done: 1, total: 2, percent: 50 });
+        expect(executionNodesForStrategy(nodes, edges, "B").map((n) => n.id)).toEqual([
+            "shared",
+            "b",
+        ]);
+    });
+    it("uses the same BLOCKED_BY direction for frontier and cycle validation", () => {
+        const nodes = [node({ id: "a", title: "A" }), node({ id: "b", title: "B" })];
+        const sameDependency = [
+            edge({ from_node_id: "a", to_node_id: "b" }),
+            edge({ from_node_id: "b", to_node_id: "a", edge_type: "BLOCKED_BY" }),
+        ];
+        expect(findHardCycle(nodes, sameDependency)).toBeNull();
+        expect(
+            findHardCycle(nodes, [
+                edge({ from_node_id: "a", to_node_id: "b" }),
+                edge({ from_node_id: "a", to_node_id: "b", edge_type: "BLOCKED_BY" }),
+            ]),
+        ).not.toBeNull();
+    });
     it("marks actions ready only after hard prerequisites are terminal", () => {
-        const prerequisite = node({ id: "research", title: "Collect price evidence", status: "DONE" });
+        const prerequisite = node({
+            id: "research",
+            title: "Collect price evidence",
+            status: "DONE",
+        });
         const ready = node({ id: "call", title: "Call three lenders" });
         const blockedPrerequisite = node({
             id: "income-proof",
@@ -50,9 +90,19 @@ describe("computeFrontier", () => {
 
     it("keeps dependents blocked when a hard prerequisite is skipped or cancelled", () => {
         const skipped = node({ id: "skipped", title: "Skipped prerequisite", status: "SKIPPED" });
-        const cancelled = node({ id: "cancelled", title: "Cancelled prerequisite", status: "CANCELLED" });
-        const afterSkipped = node({ id: "after-skipped", title: "Do work after skipped prerequisite" });
-        const afterCancelled = node({ id: "after-cancelled", title: "Do work after cancelled prerequisite" });
+        const cancelled = node({
+            id: "cancelled",
+            title: "Cancelled prerequisite",
+            status: "CANCELLED",
+        });
+        const afterSkipped = node({
+            id: "after-skipped",
+            title: "Do work after skipped prerequisite",
+        });
+        const afterCancelled = node({
+            id: "after-cancelled",
+            title: "Do work after cancelled prerequisite",
+        });
 
         const frontier = computeFrontier(
             [skipped, cancelled, afterSkipped, afterCancelled],
@@ -63,7 +113,9 @@ describe("computeFrontier", () => {
         );
 
         expect(frontier.ready.map((candidate) => candidate.node.id)).not.toContain("after-skipped");
-        expect(frontier.ready.map((candidate) => candidate.node.id)).not.toContain("after-cancelled");
+        expect(frontier.ready.map((candidate) => candidate.node.id)).not.toContain(
+            "after-cancelled",
+        );
         expect(frontier.blocked.map((candidate) => candidate.node.id)).toEqual(
             expect.arrayContaining(["after-skipped", "after-cancelled"]),
         );

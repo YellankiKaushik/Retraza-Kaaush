@@ -48,13 +48,18 @@ export const listCases = createServerFn({ method: "GET" })
         const [cases, plans] = await Promise.all([
             supabase
                 .from("intake_cases")
-                .select("id, normalized_title, raw_text, intent_type, status, clarity_score, created_at")
+                .select(
+                    "id, normalized_title, raw_text, intent_type, status, clarity_score, created_at",
+                )
                 .eq("user_id", userId)
                 .order("created_at", { ascending: false })
                 .limit(100),
             supabase.from("plans").select("id, case_id, active_version_id").eq("user_id", userId),
         ]);
 
+        if (cases.error)
+            throw new Error(`Your objectives could not be loaded: ${cases.error.message}`);
+        if (plans.error) throw new Error(`Your plans could not be loaded: ${plans.error.message}`);
         const planByCase = new Map((plans.data ?? []).map((p) => [p.case_id, p]));
         return (cases.data ?? []).map((c) => ({
             id: c.id,
@@ -73,10 +78,13 @@ export const listCases = createServerFn({ method: "GET" })
 export const getCaseBundle = createServerFn({ method: "GET" })
     .middleware([requireSupabaseAuth])
     .inputValidator((input: unknown) =>
-        z.object({ caseId: z.string().uuid(), versionId: z.string().uuid().optional() }).parse(input),
+        z
+            .object({ caseId: z.string().uuid(), versionId: z.string().uuid().optional() })
+            .parse(input),
     )
     .handler(async ({ data, context }) => {
         const { supabase, userId } = context;
+        const { isMockAiEnabled } = await import("@/lib/ai-gateway.server");
 
         const caseRow = await supabase
             .from("intake_cases")
@@ -84,6 +92,8 @@ export const getCaseBundle = createServerFn({ method: "GET" })
             .eq("id", data.caseId)
             .eq("user_id", userId)
             .maybeSingle();
+        if (caseRow.error)
+            throw new Error(`This objective could not be loaded: ${caseRow.error.message}`);
         if (!caseRow.data) throw new Error("That plan could not be found.");
 
         const [facts, plan] = await Promise.all([
@@ -101,7 +111,10 @@ export const getCaseBundle = createServerFn({ method: "GET" })
                 .maybeSingle(),
         ]);
 
+        if (facts.error) throw new Error(`Context could not be loaded: ${facts.error.message}`);
+        if (plan.error) throw new Error(`This plan could not be loaded: ${plan.error.message}`);
         const base = {
+            generationMode: isMockAiEnabled() ? ("mock" as const) : ("live" as const),
             case: {
                 id: caseRow.data.id,
                 rawText: caseRow.data.raw_text,
@@ -172,11 +185,29 @@ export const getCaseBundle = createServerFn({ method: "GET" })
                     .limit(10),
             ]);
 
+        for (const result of [
+            version,
+            versions,
+            nodes,
+            edges,
+            strategies,
+            assumptions,
+            risks,
+            changes,
+            checkIns,
+        ]) {
+            if (result.error)
+                throw new Error(`Plan details could not be loaded: ${result.error.message}`);
+        }
+        if (!version.data || version.data.plan_id !== plan.data.id) {
+            throw new Error("That version does not belong to this plan.");
+        }
         const nodeIds = (nodes.data ?? []).map((n) => n.id);
         const actions =
             nodeIds.length > 0
                 ? await supabase.from("actions").select("*").in("plan_node_id", nodeIds)
-                : { data: [] as never[] };
+                : { data: [] as never[], error: null };
+        if (actions.error) throw new Error(`Actions could not be loaded: ${actions.error.message}`);
 
         return {
             ...base,
@@ -205,26 +236,8 @@ export const exportUserData = createServerFn({ method: "GET" })
     .middleware([requireSupabaseAuth])
     .handler(async ({ context }) => {
         const { supabase, userId } = context;
-        const tables = [
-            "intake_cases",
-            "case_context_facts",
-            "plans",
-            "plan_versions",
-            "plan_nodes",
-            "plan_edges",
-            "actions",
-            "strategies",
-            "assumptions",
-            "risks",
-            "plan_changes",
-            "check_ins",
-        ] as const;
-
-        const out: Record<string, JsonValue[]> = {};
-        for (const table of tables) {
-            const { data } = await supabase.from(table).select("*").eq("user_id", userId);
-            out[table] = (data ?? []) as unknown as JsonValue[];
-        }
+        const { readUserExport } = await import("@/lib/data-export.server");
+        const out = (await readUserExport(supabase, userId)) as Record<string, JsonValue[]>;
 
         const telemetry = await import("@/lib/telemetry.server");
         await telemetry.recordAudit({ userId, action: "DATA_EXPORTED" });

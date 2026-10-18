@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as DemoRouteImport } from './routes/demo'
 import { Route as NewRouteImport } from './routes/new'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PlansCaseIdRouteImport } from './routes/plans.$caseId'
@@ -23,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoRoute = DemoRouteImport.update({
+  id: '/demo',
+  path: '/demo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewRoute = NewRouteImport.update({
@@ -44,6 +50,7 @@ const PlansCaseIdRoute = PlansCaseIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/demo': typeof DemoRoute
   '/new': typeof NewRoute
   '/settings': typeof SettingsRoute
   '/plans/$caseId': typeof PlansCaseIdRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/demo': typeof DemoRoute
   '/new': typeof NewRoute
   '/settings': typeof SettingsRoute
   '/plans/$caseId': typeof PlansCaseIdRoute
@@ -59,21 +67,30 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/demo': typeof DemoRoute
   '/new': typeof NewRoute
   '/settings': typeof SettingsRoute
   '/plans/$caseId': typeof PlansCaseIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/new' | '/settings' | '/plans/$caseId'
+  fullPaths: '/' | '/auth' | '/demo' | '/new' | '/settings' | '/plans/$caseId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/new' | '/settings' | '/plans/$caseId'
-  id: '__root__' | '/' | '/auth' | '/new' | '/settings' | '/plans/$caseId'
+  to: '/' | '/auth' | '/demo' | '/new' | '/settings' | '/plans/$caseId'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/demo'
+    | '/new'
+    | '/settings'
+    | '/plans/$caseId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  DemoRoute: typeof DemoRoute
   NewRoute: typeof NewRoute
   SettingsRoute: typeof SettingsRoute
   PlansCaseIdRoute: typeof PlansCaseIdRoute
@@ -93,6 +110,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo': {
+      id: '/demo'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof DemoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/new': {
@@ -122,6 +146,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  DemoRoute: DemoRoute,
   NewRoute: NewRoute,
   SettingsRoute: SettingsRoute,
   PlansCaseIdRoute: PlansCaseIdRoute,

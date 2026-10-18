@@ -10,55 +10,22 @@ export const updateAction = createServerFn({ method: "POST" })
         z
             .object({
                 nodeId: z.string().uuid(),
-                status: z.enum(["PENDING", "IN_PROGRESS", "DONE", "BLOCKED", "SKIPPED", "DEFERRED"]),
+                status: z.enum([
+                    "PENDING",
+                    "IN_PROGRESS",
+                    "DONE",
+                    "BLOCKED",
+                    "SKIPPED",
+                    "DEFERRED",
+                ]),
                 note: z.string().max(1200).optional(),
                 dueAt: z.string().datetime().nullable().optional(),
             })
             .parse(input),
     )
     .handler(async ({ data, context }) => {
-        const { supabase, userId } = context;
-
-        const node = await supabase
-            .from("plan_nodes")
-            .select("id, title")
-            .eq("id", data.nodeId)
-            .eq("user_id", userId)
-            .maybeSingle();
-        if (!node.data) throw new Error("That action could not be found.");
-
-        const { error } = await supabase
-            .from("plan_nodes")
-            .update({ status: data.status })
-            .eq("id", data.nodeId)
-            .eq("user_id", userId);
-        if (error) throw new Error(error.message);
-
-        const actionPatch: {
-            completed_at: string | null;
-            result?: { note: string } | null;
-            due_at?: string | null;
-        } = {
-            completed_at: data.status === "DONE" ? new Date().toISOString() : null,
-        };
-        if (data.note !== undefined) actionPatch.result = data.note ? { note: data.note } : null;
-        if (data.dueAt !== undefined) actionPatch.due_at = data.dueAt;
-
-        await supabase
-            .from("actions")
-            .update(actionPatch as never)
-            .eq("plan_node_id", data.nodeId)
-            .eq("user_id", userId);
-
-        const telemetry = await import("@/lib/telemetry.server");
-        await telemetry.recordAudit({
-            userId,
-            action: `ACTION_${data.status}`,
-            resource: "plan_nodes",
-            resourceId: data.nodeId,
-        });
-
-        return { ok: true };
+        const { updateActionState } = await import("@/lib/action-execution.server");
+        return updateActionState(data, context);
     });
 
 /** FR-021 — the user can edit AI-authored actions. */
@@ -78,29 +45,16 @@ export const editAction = createServerFn({ method: "POST" })
     .handler(async ({ data, context }) => {
         const { supabase, userId } = context;
 
-        const { error } = await supabase
-            .from("plan_nodes")
-            .update({ title: data.title, description: data.description })
-            .eq("id", data.nodeId)
-            .eq("user_id", userId);
-        if (error) throw new Error(error.message);
-
-        const existing = await supabase
-            .from("actions")
-            .select("revision")
-            .eq("plan_node_id", data.nodeId)
-            .eq("user_id", userId)
-            .maybeSingle();
-
-        await supabase
-            .from("actions")
-            .update({
-                completion_criteria: data.completionCriteria,
-                estimated_minutes: data.estimatedMinutes,
-                revision: (existing.data?.revision ?? 1) + 1,
-            })
-            .eq("plan_node_id", data.nodeId)
-            .eq("user_id", userId);
+        const { error } = await supabase.rpc("update_execution_node", {
+            target_node_id: data.nodeId,
+            patch: {
+                title: data.title,
+                description: data.description,
+                completionCriteria: data.completionCriteria,
+                estimatedMinutes: data.estimatedMinutes,
+            },
+        });
+        if (error) throw new Error(`Action details could not be saved: ${error.message}`);
 
         const telemetry = await import("@/lib/telemetry.server");
         await telemetry.recordAudit({
@@ -125,7 +79,13 @@ export const submitCheckIn = createServerFn({ method: "POST" })
                 changedFacts: z
                     .array(
                         z.object({
-                            category: z.enum(["RESOURCE", "CONSTRAINT", "PREFERENCE", "FACT", "MEASURE"]),
+                            category: z.enum([
+                                "RESOURCE",
+                                "CONSTRAINT",
+                                "PREFERENCE",
+                                "FACT",
+                                "MEASURE",
+                            ]),
                             key: z.string().min(1).max(80),
                             value: z.string().min(1).max(600),
                         }),
@@ -136,39 +96,15 @@ export const submitCheckIn = createServerFn({ method: "POST" })
             .parse(input),
     )
     .handler(async ({ data, context }) => {
-        const { supabase, userId } = context;
+        const { supabase } = context;
 
-        const plan = await supabase
-            .from("plans")
-            .select("id, case_id")
-            .eq("id", data.planId)
-            .eq("user_id", userId)
-            .maybeSingle();
-        if (!plan.data) throw new Error("That plan could not be found.");
-        const planRow = plan.data;
-
-        const { error } = await supabase.from("check_ins").insert({
-            user_id: userId,
-            plan_id: data.planId,
-            note: data.note || null,
+        const { error } = await supabase.rpc("save_plan_check_in", {
+            target_plan_id: data.planId,
+            note: data.note,
             progress_rating: data.progressRating,
             changed_facts: data.changedFacts,
         });
-        if (error) throw new Error(error.message);
-
-        if (data.changedFacts.length > 0) {
-            await supabase.from("case_context_facts").insert(
-                data.changedFacts.map((f) => ({
-                    user_id: userId,
-                    case_id: planRow.case_id,
-                    category: f.category,
-                    key: f.key,
-                    value: { answer: f.value },
-                    source: "CHECK_IN",
-                    confidence: 1,
-                })),
-            );
-        }
+        if (error) throw new Error(`Check-in could not be saved: ${error.message}`);
 
         return {
             ok: true,

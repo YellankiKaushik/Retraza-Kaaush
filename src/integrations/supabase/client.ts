@@ -30,19 +30,38 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
     };
 }
 
+export function supabaseConfigurationError(): string | null {
+    const url = import.meta.env["VITE_SUPABASE_URL"];
+    const key = import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
+    if (!url || !key)
+        return "Sign-in is unavailable until this workspace is connected to Supabase.";
+    if (key.startsWith("sb_secret_"))
+        return "Sign-in is unavailable because the public API key is misconfigured.";
+    try {
+        const parsed = new URL(url);
+        if (!["https:", "http:"].includes(parsed.protocol)) throw new Error("Invalid protocol");
+    } catch {
+        return "Sign-in is unavailable because the Supabase URL is invalid.";
+    }
+    return null;
+}
+
 function createSupabaseClient() {
     // Use import.meta.env for client-side (Vite build-time replacement)
     // Fall back to process.env for SSR (server-side rendering)
-    const SUPABASE_URL = import.meta.env["VITE_SUPABASE_URL"] || process.env["SUPABASE_URL"];
+    const SUPABASE_URL =
+        import.meta.env["VITE_SUPABASE_URL"] ||
+        (typeof process !== "undefined" ? process.env["SUPABASE_URL"] : undefined);
     const SUPABASE_PUBLISHABLE_KEY =
-        import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] || process.env["SUPABASE_PUBLISHABLE_KEY"];
+        import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
+        (typeof process !== "undefined" ? process.env["SUPABASE_PUBLISHABLE_KEY"] : undefined);
 
     if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
         const missing = [
             ...(!SUPABASE_URL ? ["SUPABASE_URL"] : []),
             ...(!SUPABASE_PUBLISHABLE_KEY ? ["SUPABASE_PUBLISHABLE_KEY"] : []),
         ];
-        const message = `Missing Supabase environment variable(s): ${missing.join(", ")}. Connect Supabase in Lovable Cloud.`;
+        const message = `Missing Supabase environment variable(s): ${missing.join(", ")}. Configure the Supabase environment variables.`;
         console.error(`[Supabase] ${message}`);
         throw new Error(message);
     }

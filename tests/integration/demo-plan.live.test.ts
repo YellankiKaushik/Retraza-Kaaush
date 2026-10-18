@@ -2,6 +2,7 @@ import { afterEach, expect, it, vi } from "vitest";
 
 import { runIntakeAnalysis, runPlanGeneration } from "@/ai/orchestrator.server";
 import { computeFrontier, progressOf } from "@/domain/frontier";
+import type { GraphNode, GraphEdge } from "@/domain/types";
 import { validateProposal } from "@/lib/planner.server";
 import { loadProjectEnv } from "../helpers/test-env";
 
@@ -18,7 +19,8 @@ it.skipIf(process.env["RUN_LIVE_DEMO_PLAN"] !== "true")(
         vi.stubEnv("AI_PROVIDER_MAX_RETRIES", "0");
         vi.stubEnv("AI_MAX_OUTPUT_TOKENS", "8000");
 
-        const rawText = "I want to become a product manager in six months. I currently have no PM experience, I work full-time, and I can dedicate 10 hours per week.";
+        const rawText =
+            "I want to become a product manager in six months. I currently have no PM experience, I work full-time, and I can dedicate 10 hours per week.";
         const correlationId = crypto.randomUUID();
         const intake = await runIntakeAnalysis({ rawText, correlationId });
         expect(intake.meta.provider).not.toBe("mock");
@@ -29,7 +31,11 @@ it.skipIf(process.env["RUN_LIVE_DEMO_PLAN"] !== "true")(
             intentType: intake.data.intentType,
             objective: intake.data.normalizedObjective,
             facts: [
-                { category: "CONSTRAINT", key: "availability", value: "10 hours per week while working full-time" },
+                {
+                    category: "CONSTRAINT",
+                    key: "availability",
+                    value: "10 hours per week while working full-time",
+                },
                 { category: "FACT", key: "experience", value: "No PM experience" },
             ],
             scenario: "BALANCED",
@@ -40,11 +46,32 @@ it.skipIf(process.env["RUN_LIVE_DEMO_PLAN"] !== "true")(
         expect(result.data.strategies.length).toBeGreaterThan(0);
         expect(result.data.assumptions.length).toBeGreaterThan(0);
         expect(result.data.risks.length).toBeGreaterThan(0);
-        expect(nodes.some((node) => node.node_type === "MILESTONE")).toBe(true);
-        expect(computeFrontier(nodes, edges).ready.length).toBeGreaterThan(0);
-        expect(progressOf(nodes).total).toBeGreaterThan(0);
+        expect(nodes.some((node) => node.nodeType === "MILESTONE")).toBe(true);
+        const graphNodes: GraphNode[] = nodes.map((node) => ({
+            id: node.tempId,
+            node_type: node.nodeType,
+            title: node.title,
+            description: node.description,
+            status: "PENDING",
+            priority_score: null,
+            depth: node.depth,
+            strategy_id: node.strategyKey,
+            metadata: {},
+        }));
+        const graphEdges: GraphEdge[] = edges.map((edge, index) => ({
+            id: String(index),
+            from_node_id: edge.from,
+            to_node_id: edge.to,
+            edge_type: edge.edgeType,
+            hard_dependency: edge.hardDependency,
+            rationale: edge.rationale,
+        }));
+        expect(computeFrontier(graphNodes, graphEdges).ready.length).toBeGreaterThan(0);
+        expect(progressOf(graphNodes).total).toBeGreaterThan(0);
         for (const call of [intake, result]) {
-            console.info(`${call.meta.operation}: ${call.meta.provider}; input tokens=${call.meta.inputTokens}; output tokens=${call.meta.outputTokens}`);
+            console.info(
+                `${call.meta.operation}: ${call.meta.provider}; input tokens=${call.meta.inputTokens}; output tokens=${call.meta.outputTokens}`,
+            );
         }
     },
     180_000,

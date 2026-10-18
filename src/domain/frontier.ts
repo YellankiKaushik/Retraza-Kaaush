@@ -15,6 +15,33 @@ import {
 
 const EPSILON = 0.25;
 
+/** Execute the chosen route plus shared work and its hard prerequisites. */
+export function executionNodesForStrategy(
+    nodes: GraphNode[],
+    edges: GraphEdge[],
+    strategyId: string | null,
+) {
+    if (!strategyId) return nodes;
+    const included = new Set(
+        nodes.filter((n) => !n.strategy_id || n.strategy_id === strategyId).map((n) => n.id),
+    );
+    let changed = true;
+    while (changed) {
+        changed = false;
+        for (const edge of edges) {
+            if (!edge.hard_dependency || !HARD_EDGE_TYPES.includes(edge.edge_type)) continue;
+            const prerequisite =
+                edge.edge_type === "BLOCKED_BY" ? edge.to_node_id : edge.from_node_id;
+            const dependent = edge.edge_type === "BLOCKED_BY" ? edge.from_node_id : edge.to_node_id;
+            if (included.has(dependent) && !included.has(prerequisite)) {
+                included.add(prerequisite);
+                changed = true;
+            }
+        }
+    }
+    return nodes.filter((n) => included.has(n.id));
+}
+
 interface Weights {
     impact: number;
     successLikelihood: number;
@@ -43,7 +70,8 @@ export function dependencyLeverage(nodeId: string, edges: GraphEdge[]): number {
         (e) => e.from_node_id === nodeId && HARD_EDGE_TYPES.includes(e.edge_type),
     ).length;
     const enabling = edges.filter(
-        (e) => e.from_node_id === nodeId && (e.edge_type === "ENABLES" || e.edge_type === "PART_OF"),
+        (e) =>
+            e.from_node_id === nodeId && (e.edge_type === "ENABLES" || e.edge_type === "PART_OF"),
     ).length;
     return 1 + direct + enabling * 0.5;
 }
@@ -54,7 +82,9 @@ export function findHardCycle(nodes: GraphNode[], edges: GraphEdge[]): string[] 
     for (const node of nodes) adjacency.set(node.id, []);
     for (const edge of edges) {
         if (!edge.hard_dependency || !HARD_EDGE_TYPES.includes(edge.edge_type)) continue;
-        adjacency.get(edge.from_node_id)?.push(edge.to_node_id);
+        const from = edge.edge_type === "BLOCKED_BY" ? edge.to_node_id : edge.from_node_id;
+        const to = edge.edge_type === "BLOCKED_BY" ? edge.from_node_id : edge.to_node_id;
+        adjacency.get(from)?.push(to);
     }
 
     const state = new Map<string, 0 | 1 | 2>();
@@ -112,7 +142,9 @@ export function computeFrontier(
             (e) =>
                 e.hard_dependency &&
                 HARD_EDGE_TYPES.includes(e.edge_type) &&
-                (e.edge_type === "BLOCKED_BY" ? e.from_node_id === node.id : e.to_node_id === node.id),
+                (e.edge_type === "BLOCKED_BY"
+                    ? e.from_node_id === node.id
+                    : e.to_node_id === node.id),
         );
 
         const unmet = prerequisiteEdges
@@ -122,7 +154,8 @@ export function computeFrontier(
         const w = readWeights(node);
         const leverage = dependencyLeverage(node.id, edges);
         const score =
-            (w.impact * w.successLikelihood * w.urgency * leverage) / Math.max(w.effortCost, EPSILON);
+            (w.impact * w.successLikelihood * w.urgency * leverage) /
+            Math.max(w.effortCost, EPSILON);
 
         const reasons: string[] = [];
         if (node.status === "IN_PROGRESS") reasons.push("Already in progress");
@@ -130,7 +163,8 @@ export function computeFrontier(
         if (w.urgency >= 4) reasons.push("Time-sensitive");
         if (w.impact >= 4) reasons.push("High impact on the objective");
         if (w.effortCost <= 1.5) reasons.push("Low effort");
-        if (node.node_type === "EXPERIMENT") reasons.push("Reversible test that reduces uncertainty");
+        if (node.node_type === "EXPERIMENT")
+            reasons.push("Reversible test that reduces uncertainty");
         if (reasons.length === 0) reasons.push("All hard prerequisites are satisfied");
 
         const candidate: FrontierCandidate = {

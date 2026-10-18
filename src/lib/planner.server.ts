@@ -76,6 +76,11 @@ export function validateProposal(proposal: PlanProposal) {
     const edges = proposal.edges;
 
     const strategyKeys = new Set(proposal.strategies.map((s) => s.key));
+    if (strategyKeys.size !== proposal.strategies.length)
+        throw new DomainError(
+            "PLAN_VALIDATION_FAILED",
+            "The proposed plan contains duplicate strategy keys.",
+        );
     const unknownStrategyNode = proposal.nodes.find(
         (n) => n.strategyKey && !strategyKeys.has(n.strategyKey),
     );
@@ -152,193 +157,108 @@ export interface PersistArgs {
     parentVersionId: string | null;
     versionNumber: number;
     modelAlias: string;
+    generationSource?: { provider: string; model: string | null };
     promptVersion: string;
     activate: boolean;
     strategyPreference?: string | null;
 }
 
-/** Persists a validated proposal as a new plan version. */
+/** Validate in application code, then commit the entire graph in one transaction. */
 export async function persistProposal(args: PersistArgs) {
-    const { supabase, userId, proposal } = args;
+    const { proposal } = args;
     const { nodes, edges } = validateProposal(proposal);
-
-    const version = assertOk(
-        await supabase
-            .from("plan_versions")
-            .insert({
-                user_id: userId,
-                plan_id: args.planId,
-                parent_version_id: args.parentVersionId,
-                version_number: args.versionNumber,
-                state: "CANDIDATE",
-                scenario: args.scenario,
-                feasibility_score: Math.round(proposal.feasibility.score),
-                confidence_score: Math.round(proposal.confidence.score),
-                confidence_reasons: [...proposal.confidence.reasons, ...proposal.feasibility.reasons],
-                generated_by: "AI",
-                prompt_version: args.promptVersion,
-                model_alias: args.modelAlias,
-                summary: proposal.summary,
-            })
-            .select()
-            .single(),
-        "create plan version",
-    );
-
-    const preferred = args.strategyPreference;
     const recommendedKey =
-        (preferred && proposal.strategies.find((s) => s.key === preferred)?.key) ??
+        (args.strategyPreference &&
+            proposal.strategies.find((s) => s.key === args.strategyPreference)?.key) ??
         proposal.strategies.find((s) => s.recommended)?.key ??
         proposal.strategies[0]?.key ??
         null;
-
-    const strategyRows = assertOk(
-        await supabase
-            .from("strategies")
-            .insert(
-                proposal.strategies.map((s) => ({
-                    user_id: userId,
-                    plan_version_id: version.id,
-                    name: s.name,
-                    summary: s.summary,
-                    risk_level: s.riskLevel,
-                    effort_score: Math.round(s.effortScore),
-                    time_score: Math.round(s.timeScore),
-                    selected: s.key === recommendedKey,
-                    rationale: s.rationale,
-                    tradeoffs: s.tradeoffs,
-                })),
-            )
-            .select(),
-        "create strategies",
-    );
-
-    const strategyIdByKey = new Map<string, string>();
-    proposal.strategies.forEach((s, i) => {
-        const row = strategyRows[i];
-        if (row) strategyIdByKey.set(s.key, row.id);
-    });
-
-    const nodeRows = assertOk(
-        await supabase
-            .from("plan_nodes")
-            .insert(
-                nodes.map((n) => ({
-                    user_id: userId,
-                    plan_version_id: version.id,
-                    strategy_id: n.strategyKey ? (strategyIdByKey.get(n.strategyKey) ?? null) : null,
-                    node_type: n.nodeType,
-                    title: n.title,
-                    description: n.description,
-                    status: "PENDING" as const,
-                    depth: Math.round(n.depth),
-                    metadata: {
-                        impact: n.impact,
-                        urgency: n.urgency,
-                        effortCost: n.effortCost,
-                        successLikelihood: n.successLikelihood,
-                        tempId: n.tempId,
-                        expectedResult: n.expectedResult,
-                    },
-                })),
-            )
-            .select(),
-        "create plan nodes",
-    );
-
-    const nodeIdByTemp = new Map<string, string>();
-    nodes.forEach((n, i) => {
-        const row = nodeRows[i];
-        if (row) nodeIdByTemp.set(n.tempId, row.id);
-    });
-
-    const edgeRows = edges
-        .map((e) => ({
-            user_id: userId,
-            plan_version_id: version.id,
-            from_node_id: nodeIdByTemp.get(e.from)!,
-            to_node_id: nodeIdByTemp.get(e.to)!,
+    const strategyIds = new Map(proposal.strategies.map((s) => [s.key, crypto.randomUUID()]));
+    const nodeIds = new Map(nodes.map((n) => [n.tempId, crypto.randomUUID()]));
+    const uniqueEdges = [
+        ...new Map(edges.map((e) => [`${e.from}|${e.to}|${e.edgeType}`, e])).values(),
+    ];
+    const payload = {
+        version: {
+            parent_version_id: args.parentVersionId,
+            scenario: args.scenario,
+            feasibility_score: Math.round(proposal.feasibility.score),
+            confidence_score: Math.round(proposal.confidence.score),
+            confidence_reasons: [...proposal.confidence.reasons, ...proposal.feasibility.reasons],
+            generated_by: "AI",
+            prompt_version: args.promptVersion,
+            model_alias: args.modelAlias,
+            summary: proposal.summary,
+        },
+        strategies: proposal.strategies.map((s) => ({
+            id: strategyIds.get(s.key),
+            name: s.name,
+            summary: s.summary,
+            risk_level: s.riskLevel,
+            effort_score: Math.round(s.effortScore),
+            time_score: Math.round(s.timeScore),
+            selected: s.key === recommendedKey,
+            rationale: s.rationale,
+            tradeoffs: s.tradeoffs,
+        })),
+        plan_nodes: nodes.map((n) => ({
+            id: nodeIds.get(n.tempId),
+            strategy_id: n.strategyKey ? strategyIds.get(n.strategyKey) : null,
+            node_type: n.nodeType,
+            title: n.title,
+            description: n.description,
+            status: "PENDING",
+            depth: Math.round(n.depth),
+            metadata: {
+                impact: n.impact,
+                urgency: n.urgency,
+                effortCost: n.effortCost,
+                successLikelihood: n.successLikelihood,
+                tempId: n.tempId,
+                expectedResult: n.expectedResult,
+                ...(args.generationSource ? { aiGeneration: args.generationSource } : {}),
+            },
+        })),
+        plan_edges: uniqueEdges.map((e) => ({
+            from_node_id: nodeIds.get(e.from),
+            to_node_id: nodeIds.get(e.to),
             edge_type: e.edgeType,
             hard_dependency: e.hardDependency,
             rationale: e.rationale,
-        }))
-        .filter((e) => e.from_node_id && e.to_node_id);
-
-    // Unique (version, from, to, type) — drop duplicates the model may repeat.
-    const seen = new Set<string>();
-    const uniqueEdges = edgeRows.filter((e) => {
-        const key = `${e.from_node_id}|${e.to_node_id}|${e.edge_type}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-    });
-
-    if (uniqueEdges.length > 0) {
-        const { error } = await supabase.from("plan_edges").insert(uniqueEdges);
-        if (error) throw new DomainError("INTERNAL_ERROR", `create plan edges: ${error.message}`);
-    }
-
-    const actionNodes = nodes.filter((n) => n.nodeType === "ACTION" || n.nodeType === "EXPERIMENT");
-    if (actionNodes.length > 0) {
-        const { error } = await supabase.from("actions").insert(
-            actionNodes.map((n) => ({
-                user_id: userId,
-                plan_node_id: nodeIdByTemp.get(n.tempId)!,
+        })),
+        actions: nodes
+            .filter((n) => n.nodeType === "ACTION" || n.nodeType === "EXPERIMENT")
+            .map((n) => ({
+                plan_node_id: nodeIds.get(n.tempId),
                 completion_criteria: n.completionCriteria ?? "",
                 expected_result: n.expectedResult,
                 estimated_minutes: n.estimatedMinutes ? Math.round(n.estimatedMinutes) : null,
             })),
-        );
-        if (error) throw new DomainError("INTERNAL_ERROR", `create actions: ${error.message}`);
-    }
-
-    if (proposal.assumptions.length > 0) {
-        const { error } = await supabase.from("assumptions").insert(
-            proposal.assumptions.map((a) => ({
-                user_id: userId,
-                plan_version_id: version.id,
-                statement: a.statement,
-                importance: a.importance,
-                validation_action_node_id: a.validationNodeTempId
-                    ? (nodeIdByTemp.get(a.validationNodeTempId) ?? null)
-                    : null,
-            })),
-        );
-        if (error) throw new DomainError("INTERNAL_ERROR", `create assumptions: ${error.message}`);
-    }
-
-    if (proposal.risks.length > 0) {
-        const { error } = await supabase.from("risks").insert(
-            proposal.risks.map((r) => ({
-                user_id: userId,
-                plan_version_id: version.id,
-                statement: r.statement,
-                probability_band: r.probability,
-                impact_band: r.impact,
-                mitigation: r.mitigation,
-            })),
-        );
-        if (error) throw new DomainError("INTERNAL_ERROR", `create risks: ${error.message}`);
-    }
-
-    const bottleneckId = proposal.bottleneckTempId
-        ? (nodeIdByTemp.get(proposal.bottleneckTempId) ?? null)
-        : null;
-
-    await supabase
-        .from("plan_versions")
-        .update({ bottleneck_node_id: bottleneckId, bottleneck_reason: proposal.bottleneckReason })
-        .eq("id", version.id);
-
-    if (args.activate) {
-        const { error } = await supabase.rpc("activate_plan_version_for_user", {
+        assumptions: proposal.assumptions.map((a) => ({
+            statement: a.statement,
+            importance: a.importance,
+            validation_action_node_id: a.validationNodeTempId
+                ? (nodeIds.get(a.validationNodeTempId) ?? null)
+                : null,
+        })),
+        risks: proposal.risks.map((r) => ({
+            statement: r.statement,
+            probability_band: r.probability,
+            impact_band: r.impact,
+            mitigation: r.mitigation,
+        })),
+        bottleneckId: proposal.bottleneckTempId ? nodeIds.get(proposal.bottleneckTempId) : null,
+        bottleneckReason: proposal.bottleneckReason,
+    };
+    const result = assertOk(
+        await args.supabase.rpc("persist_plan_graph", {
             target_plan_id: args.planId,
-            target_version_id: version.id,
-        });
-        if (error) throw new DomainError("INTERNAL_ERROR", `activate plan version: ${error.message}`);
-    }
-
-    return { versionId: version.id, versionNumber: version.version_number };
+            payload: payload as never,
+            activate: args.activate,
+        }),
+        "save plan graph",
+    );
+    return result as { versionId: string; versionNumber: number };
 }
 
 /** Compact text snapshot used as continuity context for replans and diffs. */

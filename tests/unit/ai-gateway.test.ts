@@ -6,6 +6,7 @@ import {
     isMockAiEnabled,
     maxProviderRetries,
     maxOutputTokens,
+    retryDelayMs,
     routeForAlias,
     timeoutMs,
 } from "@/lib/ai-gateway.server";
@@ -62,6 +63,7 @@ function resetEnv() {
     process.env = { ...originalEnv };
     for (const key of aiEnvKeys) delete process.env[key];
     vi.unstubAllEnvs();
+    process.env["AI_PROVIDER_MODE"] = "live";
 }
 
 describe("AI provider router", () => {
@@ -110,12 +112,38 @@ describe("AI provider router", () => {
         expect(candidatesForAlias("FAST")).toEqual([]);
     });
 
+    it("fails closed for invalid routes, invalid allowlists and missing live opt-in", () => {
+        vi.stubEnv("GROQ_API_KEY", "fictional-key");
+        vi.stubEnv("GROQ_MODEL_FAST", "fictional-model");
+        vi.stubEnv("AI_ROUTE_FAST", "typo-provider");
+        expect(candidatesForAlias("FAST")).toEqual([]);
+        vi.stubEnv("AI_ROUTE_FAST", "groq");
+        vi.stubEnv("AI_PROVIDER_ALLOWLIST", "typo-provider");
+        expect(candidatesForAlias("FAST")).toEqual([]);
+        vi.stubEnv("AI_PROVIDER_MODE", "");
+        expect(isMockAiEnabled()).toBe(true);
+    });
+
     it("bounds timeout and retry configuration", () => {
         vi.stubEnv("AI_PROVIDER_TIMEOUT_MS", "2500");
         vi.stubEnv("AI_PROVIDER_MAX_RETRIES", "12");
 
         expect(timeoutMs()).toBe(2500);
-        expect(maxProviderRetries()).toBe(3);
+        expect(maxProviderRetries()).toBe(2);
+    });
+
+    it("retries only transient statuses and respects bounded Retry-After values", () => {
+        expect(retryDelayMs({ statusCode: 503 }, 0)).toBe(2000);
+        expect(retryDelayMs({ statusCode: 503 }, 1)).toBe(5000);
+        expect(retryDelayMs({ statusCode: 503 }, 2)).toBeUndefined();
+        expect(retryDelayMs({ statusCode: 401 }, 0)).toBeUndefined();
+        expect(
+            retryDelayMs({ statusCode: 429, responseHeaders: { "retry-after": "61" } }, 0),
+        ).toBeUndefined();
+        const future = new Date(Date.now() + 30_000).toUTCString();
+        expect(
+            retryDelayMs({ statusCode: 429, responseHeaders: { "retry-after": future } }, 0),
+        ).toBeGreaterThan(28_000);
     });
 
     it("classifies provider errors for fallback decisions", () => {

@@ -830,6 +830,27 @@ export type Database = {
             [_ in never]: never;
         };
         Functions: {
+            select_plan_strategy: {
+                Args: { target_version_id: string; target_strategy_id: string };
+                Returns: undefined;
+            };
+            save_plan_check_in: {
+                Args: {
+                    target_plan_id: string;
+                    note: string;
+                    progress_rating: number | null;
+                    changed_facts: Json;
+                };
+                Returns: undefined;
+            };
+            persist_plan_graph: {
+                Args: { target_plan_id: string; payload: Json; activate?: boolean };
+                Returns: Json;
+            };
+            update_execution_node: {
+                Args: { target_node_id: string; patch: Json };
+                Returns: undefined;
+            };
             activate_plan_version_for_user: {
                 Args: {
                     target_plan_id: string;
@@ -841,62 +862,62 @@ export type Database = {
         Enums: {
             band: "LOW" | "MEDIUM" | "HIGH";
             case_status:
-            | "DRAFT"
-            | "NEEDS_CLARIFICATION"
-            | "READY_FOR_PLANNING"
-            | "PLANNED"
-            | "ARCHIVED"
-            | "REJECTED";
+                | "DRAFT"
+                | "NEEDS_CLARIFICATION"
+                | "READY_FOR_PLANNING"
+                | "PLANNED"
+                | "ARCHIVED"
+                | "REJECTED";
             edge_type:
-            | "REQUIRES"
-            | "ENABLES"
-            | "BLOCKED_BY"
-            | "SUPPORTS"
-            | "CONFLICTS_WITH"
-            | "VALIDATES"
-            | "MITIGATES"
-            | "DERIVED_FROM"
-            | "PART_OF"
-            | "PRECEDES"
-            | "ALTERNATIVE_TO";
+                | "REQUIRES"
+                | "ENABLES"
+                | "BLOCKED_BY"
+                | "SUPPORTS"
+                | "CONFLICTS_WITH"
+                | "VALIDATES"
+                | "MITIGATES"
+                | "DERIVED_FROM"
+                | "PART_OF"
+                | "PRECEDES"
+                | "ALTERNATIVE_TO";
             fact_category: "RESOURCE" | "CONSTRAINT" | "PREFERENCE" | "FACT" | "MEASURE";
             intent_type:
-            | "GOAL"
-            | "DESIRE"
-            | "PROBLEM"
-            | "DECISION"
-            | "UNCERTAINTY"
-            | "PROJECT"
-            | "HABIT"
-            | "LEARNING"
-            | "CRISIS"
-            | "QUESTION"
-            | "OTHER";
+                | "GOAL"
+                | "DESIRE"
+                | "PROBLEM"
+                | "DECISION"
+                | "UNCERTAINTY"
+                | "PROJECT"
+                | "HABIT"
+                | "LEARNING"
+                | "CRISIS"
+                | "QUESTION"
+                | "OTHER";
             node_status:
-            | "PENDING"
-            | "READY"
-            | "IN_PROGRESS"
-            | "DONE"
-            | "BLOCKED"
-            | "SKIPPED"
-            | "DEFERRED"
-            | "CANCELLED";
+                | "PENDING"
+                | "READY"
+                | "IN_PROGRESS"
+                | "DONE"
+                | "BLOCKED"
+                | "SKIPPED"
+                | "DEFERRED"
+                | "CANCELLED";
             node_type:
-            | "OBJECTIVE"
-            | "OUTCOME"
-            | "REQUIREMENT"
-            | "RESOURCE"
-            | "CONSTRAINT"
-            | "GAP"
-            | "STRATEGY"
-            | "MILESTONE"
-            | "ACTION"
-            | "EXPERIMENT"
-            | "ASSUMPTION"
-            | "RISK"
-            | "EVIDENCE"
-            | "BLOCKER"
-            | "METRIC";
+                | "OBJECTIVE"
+                | "OUTCOME"
+                | "REQUIREMENT"
+                | "RESOURCE"
+                | "CONSTRAINT"
+                | "GAP"
+                | "STRATEGY"
+                | "MILESTONE"
+                | "ACTION"
+                | "EXPERIMENT"
+                | "ASSUMPTION"
+                | "RISK"
+                | "EVIDENCE"
+                | "BLOCKER"
+                | "METRIC";
             scenario: "CONSERVATIVE" | "BALANCED" | "AGGRESSIVE";
             version_state: "CANDIDATE" | "ACTIVE" | "SUPERSEDED" | "REJECTED";
         };
@@ -912,34 +933,36 @@ type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
     DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof DatabaseWithoutInternals },
+        | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+        | { schema: keyof DatabaseWithoutInternals },
     TableName extends (DefaultSchemaTableNameOrOptions extends {
         schema: keyof DatabaseWithoutInternals;
     }
         ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-            DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+              DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
         : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
 }
     ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+          DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+          Row: infer R;
+      }
+        ? R
+        : never
+    : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+            DefaultSchema["Views"])
+      ? (DefaultSchema["Tables"] &
+            DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
             Row: infer R;
         }
-    ? R
-    : never
-    : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] & DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R;
-    }
-    ? R
-    : never
-    : never;
+          ? R
+          : never
+      : never;
 
 export type TablesInsert<
     DefaultSchemaTableNameOrOptions extends
-    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
+        keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
     TableName extends (DefaultSchemaTableNameOrOptions extends {
         schema: keyof DatabaseWithoutInternals;
     }
@@ -949,21 +972,21 @@ export type TablesInsert<
     schema: keyof DatabaseWithoutInternals;
 }
     ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-        Insert: infer I;
-    }
-    ? I
-    : never
+          Insert: infer I;
+      }
+        ? I
+        : never
     : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I;
-    }
-    ? I
-    : never
-    : never;
+      ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+            Insert: infer I;
+        }
+          ? I
+          : never
+      : never;
 
 export type TablesUpdate<
     DefaultSchemaTableNameOrOptions extends
-    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
+        keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
     TableName extends (DefaultSchemaTableNameOrOptions extends {
         schema: keyof DatabaseWithoutInternals;
     }
@@ -973,21 +996,21 @@ export type TablesUpdate<
     schema: keyof DatabaseWithoutInternals;
 }
     ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-        Update: infer U;
-    }
-    ? U
-    : never
+          Update: infer U;
+      }
+        ? U
+        : never
     : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U;
-    }
-    ? U
-    : never
-    : never;
+      ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+            Update: infer U;
+        }
+          ? U
+          : never
+      : never;
 
 export type Enums<
     DefaultSchemaEnumNameOrOptions extends
-    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
+        keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
     EnumName extends (DefaultSchemaEnumNameOrOptions extends {
         schema: keyof DatabaseWithoutInternals;
     }
@@ -998,12 +1021,12 @@ export type Enums<
 }
     ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
     : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never;
+      ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+      : never;
 
 export type CompositeTypes<
     PublicCompositeTypeNameOrOptions extends
-    keyof DefaultSchema["CompositeTypes"] | { schema: keyof DatabaseWithoutInternals },
+        keyof DefaultSchema["CompositeTypes"] | { schema: keyof DatabaseWithoutInternals },
     CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
         schema: keyof DatabaseWithoutInternals;
     }
@@ -1014,8 +1037,8 @@ export type CompositeTypes<
 }
     ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
     : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never;
+      ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+      : never;
 
 export const Constants = {
     public: {
