@@ -6,6 +6,10 @@ Full destination acceptance remains blocked by the intentionally read-only share
 
 ## Repository Evidence
 
+Destination draft PR: https://github.com/YellankiKaushik/Retraza-Kaaush/pull/1
+Published review snapshot: `a9509eb3bc6b99128e25b9bc50312a546da00884`.
+Subsequent delivery-note commits do not change verified application code.
+
 - Source: https://github.com/YellankiKaushik/Reverse-Engg-VibeSprint
 - Immutable reference SHA: `a58c52921b5eb21287446aff998c196b49e2d100`.
 - Documented source production application SHA: `8b46434cf02fb59b06417d3e5923e845f8af4707`.
