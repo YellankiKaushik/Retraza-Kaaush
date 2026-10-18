@@ -1,83 +1,105 @@
-# Vibe Sprint Hyderabad Handoff
+# Retraza / ReversePath Handoff
 
-Date: October 11, 2026. Branch: `sprint/vibe-hyderabad-2026-10-11`.
+Updated October 19, 2026. Branch: `feat/vibesprint-parity`.
+Application commit: `3b7a049057736d02dabb02fd685cf80b2f54764c`.
+Baseline: `ee2b22fc863c5c6369ad50f52a95a03dd3d94117`.
+Prior sprint changes preserved in checkpoint `2386cab`.
 
-## Repository and Safety
+## Binding Safety Decision
 
-The existing repository was found at the user-provided KAUSHIK/ALL Projects location.
-Starting state: clean `main`, tracking `origin/main`; remote is YellankiKaushik/Retraza-Kaaush.
-Published history is preserved. No push, deployment, migration, database reset, or credential changes were made.
-Respect AGENTS.md and the Lovable integration. Pushing/deployment require user approval.
+The owner confirmed that .env points to a SHARED VibeSprint reference database.
+It is strictly READ-ONLY. Do not run migrations, SQL writes, user creation,
+cleanup, live RLS or authenticated Golden Path against it. No repeated request
+for permission is needed: proceed with safe local work and wait for an explicitly
+configured isolated Retraza backend. Do not touch reference Git/hosting/database.
 
-## Completed
+Reference repo: https://github.com/YellankiKaushik/Reverse-Engg-VibeSprint
+Immutable SHA and rechecked HEAD: a58c52921b5eb21287446aff998c196b49e2d100.
+Only destination Retraza-Kaaush was modified. The reference fetch remote's push URL
+is disabled locally. No history rewrite, force-push or production deployment.
 
-- Baseline typecheck, build, lint and deterministic tests executed successfully.
-- Installed the Chromium binaries required by the current Playwright version.
-- Fixed signup falsely claiming an authenticated session when email confirmation is required.
-- Added browser regression coverage for pending email confirmation.
-- Updated the authenticated Golden Path to the six-month product-manager scenario and numeric progress/reload assertions.
-- Live smoke checks cap output at 128 tokens, report usage and skip optional OpenRouter authentication failures accurately.
-- Added the existing OpenAI-compatible adapter to opt-in smoke coverage.
-- Connected the documented AI_MAX_OUTPUT_TOKENS setting to the orchestrator.
-- Added an opt-in live demo intake/plan validation independent of Supabase.
-- Added PowerShell installation instructions to README.md.
+## Completed Implementation
 
-## Files Changed
+Source auth callbacks/session handling and signup errors, dashboard query/error
+states, goal intake, source planning workspace, strategy-aware frontier/progress,
+milestones, prepared /demo, safe data export, compact prompts, official Gemini
+adapter, configured provider portability, schema/graph diagnostics, safe quota/
+idempotency, atomic graph/action/check-in/strategy RPCs and four migration files.
 
-- README.md
-- src/routes/auth.tsx
-- src/lib/ai-gateway.server.ts
-- src/ai/orchestrator.server.ts
-- tests/unit/ai-gateway.test.ts
-- tests/e2e/auth-guard.spec.ts
-- tests/e2e/golden-path.live-supabase.spec.ts
-- tests/integration/live-ai-smoke.test.ts
-- tests/integration/demo-plan.live.test.ts
-- docs/VIBE_SPRINT_HANDOFF.md
+Added Node/Vercel SSR build scripts, environment/secret/release/hosted checks and
+licensed local fonts. Preserved Retraza-only integrations and Lovable identity.
+Patched the confirmed TanStack advisory and compatible transitive vulnerabilities.
+Normal tests stay deterministic; explicit guards refuse the shared backend.
 
-## Actual Verification
+Complete file inventory and exceptions: VIBESPRINT_PARITY_REPORT.md.
+Manual isolated-backend/deployment steps: RETRAZA_RELEASE_READINESS.md.
+README and architecture reconciliation are updated. No source release report was
+copied as destination evidence.
 
-- Baseline `npm.cmd run typecheck`: PASS.
-- Baseline `npm.cmd run test`: 30 passed, 5 skipped.
-- Baseline `npm.cmd run build`: PASS; existing inputValidator deprecation warnings.
-- Baseline `npm.cmd run lint`: zero errors, six existing Fast Refresh warnings.
-- Initial E2E: failed due missing Chromium; after installation/fix, 3 passed, authenticated Golden Path skipped.
-- Live RLS: FAIL in setup, AuthRetryableFetchError/fetch failed before any test users were created.
-- Live AI: Gemini PASS (13 input/9 output tokens); Groq PASS (190 input/70 output tokens).
-- OpenRouter: OPTIONAL UNAVAILABLE (authentication rejected), reported as skipped.
-- OpenAI/RouterPlus: skipped; endpoint/model configuration missing, key ownership awaiting user confirmation.
-- Final reruns and live PM plan check: pending at this checkpoint.
+## Tests Actually Executed
 
-## Current P0/P1 Blockers
+- Environment check/typecheck: PASS.
+- Lint: PASS, zero errors/six existing Fast Refresh warnings.
+- Unit: 58 passed.
+- Deterministic integration: 6 passed, 11 gated skips.
+- Database: 12 passed (four static/eight real PGlite PostgreSQL).
+- Combined npm test: 76 passed, 11 skipped.
+- Browser: 17 passed, 13 skipped.
+- Node production subset: 8 passed.
+- Node/Vercel builds: PASS.
+- Production public audit: 36 HTML/JS responses, zero findings/errors/failures.
+- Source/client/destination-history secret scan: zero findings.
+- npm audit: zero vulnerabilities.
+- Fresh Gemini/Groq minimal smoke: 2 passed, OpenRouter auth unavailable skip,
+  OpenAI model unconfigured skip.
+- Fresh PM intake/plan without DB: PASS (Groq intake/Gemini graph).
+- Remote migrations/live auth/live RLS/authenticated Golden Path: BLOCKED,
+  deliberately not executed against shared backend.
 
-P0: configured Supabase hostname returns NXDOMAIN from Google DNS. Local DNS resolves it to an address that resets TLS. Connected Supabase account does not list this project (only a different inactive project). Do not infer that prior successful live checks still apply today. User has been asked to restore the project or update ignored local configuration with the intended active backend.
+Do not reuse historical source production PASS claims. Intercepted signup/error
+checks do not verify actual email delivery or Google account selection.
+PGlite SQL tests do not establish hosted Supabase concurrency/Auth/PostgREST.
 
-P1: RouterPlus ownership of existing OPENAI_API_KEY is unconfirmed. Do not send that credential to RouterPlus without confirmation. OPENAI_BASE_URL, OPENAI_ENABLED and OPENAI_MODEL_* are not configured. Public RouterPlus /v1/models returns HTTP 401.
+## Environment Names Only
 
-P1: no approved deployment or verified demo URL. Existing build targets Cloudflare Workers through Nitro; this is a server application, not a static-only SPA.
+VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL,
+SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY.
+AI_PROVIDER_MODE, AI_PROVIDER_ALLOWLIST, AI_ROUTE_FAST/PRIMARY/CRITIC/FALLBACK.
+GEMINI_API_KEY, GEMINI_MODEL_DEFAULT or role models; GROQ_API_KEY and models.
+Optional OPENROUTER_/OPENAI_/LOVABLE_ server configuration remains supported.
+RETRAZA_TEST_BACKEND_ISOLATED, optional SUPABASE_TEST_URL/
+SUPABASE_TEST_PUBLISHABLE_KEY/SUPABASE_TEST_SECRET_KEY.
+RUN_SUPABASE_RLS_TESTS, RUN_E2E_GOLDEN, RUN_E2E_SIGNUP,
+RUN_LIVE_AI_SMOKE, RUN_LIVE_DEMO_PLAN.
+No values or keys belong in this handoff.
 
-## Environment Names (Never Values)
+## Remaining P0/P1 Gates
 
-VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY.
-AI_PROVIDER_MODE (mock for deterministic tests, live for real providers), AI_PROVIDER_ALLOWLIST, AI_ROUTE_FAST, AI_ROUTE_PRIMARY, AI_ROUTE_CRITIC, AI_ROUTE_FALLBACK, AI_MAX_OUTPUT_TOKENS, AI_PROVIDER_TIMEOUT_MS, AI_PROVIDER_MAX_RETRIES.
-GEMINI_API_KEY, GEMINI_MODEL_FAST, GEMINI_MODEL_PRIMARY; GROQ_API_KEY, GROQ_MODEL_FAST.
-RouterPlus via existing adapter: OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_ENABLED, OPENAI_MODEL_DEFAULT/FAST/PRIMARY/CRITIC/FALLBACK. Route it as `openai`, not as a new provider.
-RUN_LIVE_AI_SMOKE, RUN_LIVE_DEMO_PLAN, RUN_SUPABASE_RLS_TESTS, RUN_E2E_GOLDEN.
+No failing local P0 implementation check remains.
+P1: isolated backend + pending migrations, then real auth/RLS/full authenticated
+Golden Path, followed by independent hosted preview verification.
+Optional OpenRouter unavailability does not block Gemini/Groq.
+RouterPlus key ownership was never confirmed; do not send an existing key there.
 
 ## Exact Next Actions
 
-1. Finish typecheck/unit/build/lint reruns for the focused fixes and the opt-in live PM plan validation.
-2. Obtain active backend configuration through ignored .env or restoration in its owning account. Never ask for secret values in chat.
-3. Rerun `$env:RUN_SUPABASE_RLS_TESTS="true"; npm.cmd run test:integration` and `$env:RUN_E2E_GOLDEN="true"; npm.cmd run test:e2e` only once backend availability is restored. Tests own unique users and delete only those users.
-4. If the user confirms RouterPlus key ownership, query its authenticated model list server-side, choose an inexpensive available model, configure only ignored local environment and validate one small schema response. Never print response headers or raw error objects containing credentials.
-5. Review the current diff, obtain push/deployment approval, configure server secrets on the supported hosting target, verify the deployed workflow.
+1. Safe local verification: `npm.cmd run check:release`.
+2. Configure isolated Retraza/local Supabase privately; follow readiness steps.
+3. Apply only pending versioned migrations after confirming the dedicated target.
+4. Enable isolation flag and run RLS, then controlled authenticated Golden Path.
+5. Verify destination callbacks/mail delivery and independent preview before release.
 
-## Two-Minute Demo
+Local Node production server: http://127.0.0.1:5173/demo.
+Hidden process started with PID 27420; logs/parity-server*.log are ignored.
+Only use the prepared public demo while shared configuration remains.
 
-- 0:00-0:15: sign in and open New objective.
-- 0:15-0:35: enter the PM goal, analyse, answer necessary clarifications.
-- 0:35-1:10: generate the plan; show strategies, milestones and dependencies.
-- 1:10-1:35: show the executable frontier and mark one concrete action Done.
-- 1:35-2:00: show the numeric progress increase and reload to prove persistence.
+## Two-Minute Demonstration
 
-Do not claim the core demo is complete until the real authenticated journey passes against an available Supabase backend.
+Until backend acceptance passes, present /demo truthfully as prepared offline data.
+Show the PM goal, 10-hour capacity, strategy, concrete completion criterion and
+dependency chain. Complete an action, show progress/next-step change, refresh,
+then reset. Do not present it as live generated/persisted Supabase data.
+
+After isolated live verification: sign in, paste the six-month PM goal, answer
+material questions, generate the plan, inspect strategies/risks/dependencies,
+start/complete one action, show exact progress and refresh persistence.

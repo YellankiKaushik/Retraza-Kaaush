@@ -1,166 +1,201 @@
-# ReversePath
+# Retraza / ReversePath
 
-ReversePath is an AI-assisted goal, problem-solving, decision, and execution workspace. It turns a user's free-form objective into structured application data: intake, clarified context, versioned plan graph, strategies, assumptions, risks, milestones, actions, executable frontier, check-ins, and replans.
+Turn a natural-language goal, problem or decision into a versioned execution plan.
+The existing React 19 / TanStack Start application uses Supabase Auth/PostgreSQL,
+server-side AI, Zod validation and deterministic dependency/progress logic.
 
-The authoritative architecture is in [docs/DEEP_TECHNICAL_ARCHITECTURE.md](docs/DEEP_TECHNICAL_ARCHITECTURE.md).
+## Current Verification
 
-## Stack
+The VibeSprint reference is immutable. Its historical release results are not
+Retraza verification. See [parity report](docs/VIBESPRINT_PARITY_REPORT.md),
+[release readiness](docs/RETRAZA_RELEASE_READINESS.md) and
+[handoff](docs/VIBE_SPRINT_HANDOFF.md) for actual results and remaining gates.
 
-- TypeScript, React 19, TanStack Start, TanStack Router, TanStack Query
-- Tailwind CSS and shadcn-style UI primitives
-- Supabase Auth, PostgreSQL, Storage, migrations, and Row Level Security
-- Server-side AI gateway using OpenAI-compatible structured object generation
-- Free-first AI routing: Groq for fast work, Gemini for planning, OpenRouter fallback, optional OpenAI fallback
-- Vitest for unit/database/integration tests
-- Playwright for browser E2E tests
+**The currently configured shared Supabase backend is strictly read-only.**
+Do not migrate, create users, run authenticated tests, or clean up users there.
+Configure a dedicated Retraza or local backend before enabling live database tests.
 
-## Install
+## Install And Run
+
+Use Node 24 and npm. `package-lock.json` is authoritative for this release;
+the retained historical Bun files are not the release installation workflow.
 
 PowerShell:
 
 ```powershell
-npm.cmd install
-Copy-Item .env.example .env
+npm.cmd ci
+if (!(Test-Path .env)) { Copy-Item .env.example .env }
+npm.cmd run dev
 ```
 
-Unix shells:
+Unix:
 
 ```sh
-npm install
-cp .env.example .env
-```
-
-Fill `.env` with your own values. Do not commit `.env`.
-
-For zero-cost local development and normal automated tests, keep:
-
-```sh
-AI_PROVIDER_MODE=mock
-```
-
-## Supabase Setup
-
-Create or choose a Supabase project, then apply the migrations:
-
-```sh
-supabase login
-supabase link --project-ref <your-project-ref>
-supabase db push
-```
-
-For local Supabase without a global CLI install:
-
-```sh
-npx supabase start
-npx supabase db reset
-```
-
-Copy the local API URL, publishable key, and secret key into `.env`. The repository owns the schema under `supabase/migrations/`; Supabase PostgreSQL is the only authoritative structured-data store. Local Supabase requires Docker; if Docker is not running, `npx supabase start` will report that before tests can use the local database.
-
-## AI Provider Configuration
-
-AI requests run only on the server. Browser code must never receive provider keys or `SUPABASE_SERVICE_ROLE_KEY`.
-
-Default route behavior:
-
-- `FAST`: Groq, Gemini, OpenRouter, OpenAI
-- `PRIMARY`: Gemini, Groq, OpenRouter, OpenAI
-- `CRITIC`: Gemini, Groq, OpenRouter, OpenAI
-- `FALLBACK`: Gemini, Groq, OpenRouter, OpenAI
-
-Set route env vars such as `AI_ROUTE_FAST=groq,gemini,openrouter` to override. Set `AI_PROVIDER_ALLOWLIST` to enforce privacy/provider policy; providers outside the allowlist are never used as fallback.
-
-Enable a provider only when you have configured both its key and model:
-
-- `GEMINI_API_KEY`: Google AI Studio
-- `GROQ_API_KEY`: Groq Console
-- `OPENROUTER_API_KEY`: OpenRouter dashboard
-- `OPENAI_API_KEY`: OpenAI API platform
-
-Model IDs are configured with provider-specific env vars such as `GEMINI_MODEL_PRIMARY`, `GROQ_MODEL_FAST`, and `OPENROUTER_MODEL_FALLBACK`. OpenRouter free model/router IDs are intentionally not hardcoded because availability changes.
-
-Failure handling:
-
-- bounded retries via `AI_PROVIDER_MAX_RETRIES`;
-- per-call timeout via `AI_PROVIDER_TIMEOUT_MS`;
-- per-user daily request limits via `AI_DAILY_REQUEST_LIMIT` and optional operation-specific overrides such as `AI_LIMIT_GENERATE_PLAN_GRAPH_PER_DAY`;
-- 429, timeout, and malformed structured output can fall through to the next allowed configured provider;
-- invalid outputs are never persisted unless they pass the shared Zod domain contracts and graph validation;
-- if no provider can complete the request, existing plans remain usable and the user sees an AI-unavailable error.
-
-## Storage
-
-Current MVP file storage uses Supabase Storage:
-
-```sh
-OBJECT_STORAGE_PROVIDER=supabase
-SUPABASE_STORAGE_BUCKET=reversepath-files
-```
-
-The code includes a small object-storage interface so future large-object storage, such as Cloudflare R2 for exports or archived artifacts, can be added without making the MVP depend on another database.
-
-## Notion
-
-Notion is not used as application storage. The codebase includes only a future-facing `Export Plan to Notion` interface; the MVP does not depend on Notion.
-
-## Scripts
-
-```sh
+npm ci
+test -f .env || cp .env.example .env
 npm run dev
-npm run typecheck
-npm run lint
-npm run test
-npm run test:unit
-npm run test:integration
-npm run test:db
-npm run test:e2e
-npm run build
 ```
 
-Install Playwright browsers when needed:
+Edit the ignored local `.env` privately. The dev URL is
+http://localhost:5173. Keep `AI_PROVIDER_MODE=mock` for deterministic development.
+`/demo` works without login, database writes or inference. Its prepared PM plan,
+completion and reset use browser storage only and are explicitly labelled.
 
-```sh
-npx playwright install chromium
-```
+## Dedicated Supabase Backend
 
-## Tests
+Use a Retraza-owned project, never the reference project's database.
+Set matching browser/server URLs and publishable keys:
 
-Normal tests use deterministic mock AI and do not require paid provider calls.
+- `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`: server-only; supports modern `sb_secret_` keys.
 
-- Unit: AI contracts, provider router, orchestrator mock behavior, frontier, graph validation, plan diff
-- Integration: deterministic Golden Path lifecycle with mock AI and real domain logic
-- Database static validation: migrations, RLS declarations, ownership triggers, activation RPC
-- Browser E2E: public shell and unauthenticated protected-route guard
+For a fresh dedicated project, apply all eight committed migrations in order.
+For an existing dedicated project, inspect migration history and apply only pending
+files. Do not repair migration history to pretend SQL was applied.
 
-Optional live checks:
-
-PowerShell:
+PowerShell (replace the project-ref placeholder):
 
 ```powershell
-$env:RUN_LIVE_AI_SMOKE="true"; npm run test:integration
-$env:RUN_SUPABASE_RLS_TESTS="true"; npm run test:integration
-$env:RUN_E2E_GOLDEN="true"; npm run test:e2e
+npx.cmd supabase login
+npx.cmd supabase link --project-ref YOUR_RETRAZA_PROJECT_REF
+npx.cmd supabase migration list --linked
+npx.cmd supabase db push --dry-run
+npx.cmd supabase db push
 ```
 
-Unix shells:
+Review the CLI output's target before applying. Never use a remote reset.
+Do not replay `FINAL_REMOTE_BOOTSTRAP.sql` or historical one-time repair files.
+The complete current schema is the versioned files in `supabase/migrations/`.
 
-```sh
-RUN_LIVE_AI_SMOKE=true npm run test:integration
-RUN_SUPABASE_RLS_TESTS=true npm run test:integration
-RUN_E2E_GOLDEN=true npm run test:e2e
+For local Supabase, install and start Docker Desktop, then:
+
+```powershell
+npx.cmd supabase start
+npx.cmd supabase migration up --local
 ```
 
-Vitest and Playwright load `.env` for live test configuration. For normal MVP verification, live Supabase tests use `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`. Optional `SUPABASE_TEST_URL`, `SUPABASE_TEST_PUBLISHABLE_KEY`, and `SUPABASE_TEST_SECRET_KEY` override those values when you want to point tests elsewhere; legacy `SUPABASE_TEST_ANON_KEY` and `SUPABASE_TEST_SERVICE_ROLE_KEY` are supported only as fallbacks. Live AI smoke tests require the target provider key and model env var.
+Docker is required for the full local Supabase stack. It is not required for
+`npm.cmd run test:db`, which executes migrations and RLS/transaction checks in
+isolated in-memory PostgreSQL (PGlite), with a minimal Auth schema fixture.
+Those tests do not establish live Supabase Auth or PostgREST verification.
 
-Live Supabase tests are safe for the shared MVP project: they create unique temporary users and test-owned rows, delete only those users at cleanup, and never truncate, drop, reset, or bulk-delete unrelated data. The authenticated E2E Golden Path runs the app against the same configured Supabase values and uses live Gemini/Groq routing; OpenRouter remains an optional fallback.
+In the dedicated Supabase dashboard, configure Site URL and Redirect URLs for
+your Retraza origin, `/auth`, and required localhost origins. Configure Google
+OAuth only with destination-owned credentials and its Supabase callback URL.
+Keep email confirmation enabled and verify actual delivery to an owned mailbox.
 
-If Supabase CLI authentication is unavailable while bootstrapping the remote schema, run [supabase/FINAL_REMOTE_BOOTSTRAP.sql](supabase/FINAL_REMOTE_BOOTSTRAP.sql) once in the Supabase SQL Editor for the target project. That file is generated from the committed migrations and does not include destructive reset/delete operations.
+## AI Configuration
 
-## Security Notes
+All provider calls and private keys stay on the server. Only Supabase publishable
+configuration belongs in `VITE_` variables.
 
-- Authentication uses Supabase Auth.
-- Private tables carry `user_id` and enable Row Level Security.
-- Migrations include ownership-consistency triggers so child records cannot point at another user's parent entities.
-- AI requests execute server-side through provider adapters.
-- AI output is schema-validated and graph-validated before persistence.
-- Deterministic logic owns executable frontier, dependency satisfaction, action status transitions, plan activation, version numbering, progress calculation, authorization, and plan diff generation where possible.
+Gemini uses the official Google adapter. Groq and optional OpenRouter/OpenAI/
+Lovable providers retain the compatible adapter. Configure model IDs through
+`PROVIDER_MODEL_DEFAULT` or role-specific `PROVIDER_MODEL_FAST/PRIMARY/CRITIC/FALLBACK`.
+
+- Default FAST route: Groq then Gemini.
+- Default planning route: Gemini then Groq.
+- Default allowlist: `gemini,groq`.
+- Optional providers require explicit inclusion in `AI_PROVIDER_ALLOWLIST`,
+  an enabled configuration, a key and a model.
+- A nonempty invalid route or allowlist fails closed.
+- `AI_PROVIDER_MODE=live` enables inference; missing/invalid modes use mock.
+  The historical `free-first` mode remains compatible and also makes live calls.
+- Live failures never become mock successes.
+- `AI_PROVIDER_TIMEOUT_MS` defaults to 90000, capped at 300000.
+- `AI_PROVIDER_MAX_RETRIES` defaults to 0, capped at 2 per provider.
+  Only 429/503 retry the same provider with bounded Retry-After/backoff.
+- `AI_MAX_OUTPUT_TOKENS` defaults to 12000, capped at 16384.
+- Shared/operation-specific daily limits are checked before expensive work;
+  quota-read errors fail closed.
+- `AI_GENERATION_ENABLED` is a retained historical setting, not an implemented switch.
+
+Model access does not establish a free billing tier. Confirm provider billing
+before live tests. No paid fallback is enabled implicitly. Optional OpenRouter
+authentication failure does not prevent Gemini/Groq routing.
+
+The OpenAI-compatible adapter can use a deliberately configured alternate
+`OPENAI_BASE_URL`; keys must belong to that endpoint. RouterPlus credentials
+were not confirmed in this run, so no existing key was sent there.
+
+## Verification
+
+```powershell
+npm.cmd run check:env
+npm.cmd run typecheck
+npm.cmd run lint
+npm.cmd test
+npm.cmd run test:unit
+npm.cmd run test:integration
+npm.cmd run test:db
+npx.cmd playwright install chromium
+npm.cmd run test:e2e
+npm.cmd run build
+npm.cmd run build:vercel
+npm.cmd run check:secrets
+npm.cmd audit
+```
+
+`npm.cmd run check:release` runs local gates with live database/inference tests
+disabled. Normal browser checks use mock AI. Live suites are skipped, not passed.
+
+AI-only tests, without database access:
+
+```powershell
+$env:RUN_LIVE_AI_SMOKE="true"; npm.cmd run test:integration
+Remove-Item Env:RUN_LIVE_AI_SMOKE
+$env:RUN_LIVE_DEMO_PLAN="true"; npm.cmd run test:integration
+Remove-Item Env:RUN_LIVE_DEMO_PLAN
+```
+
+After the dedicated/local backend and all migrations are verified, explicitly
+set `RETRAZA_TEST_BACKEND_ISOLATED=true` in its ignored test configuration.
+Optional `SUPABASE_TEST_URL`, `SUPABASE_TEST_PUBLISHABLE_KEY`, and
+`SUPABASE_TEST_SECRET_KEY` select a separate test backend. Legacy test anon/
+service-role names remain fallback aliases. A separate URL needs its own keys.
+
+```powershell
+$env:RUN_SUPABASE_RLS_TESTS="true"; npm.cmd run test:integration
+Remove-Item Env:RUN_SUPABASE_RLS_TESTS
+$env:RUN_E2E_GOLDEN="true"; npm.cmd run test:e2e
+Remove-Item Env:RUN_E2E_GOLDEN
+```
+
+Unix equivalents use `RUN_LIVE_AI_SMOKE=true npm run test:integration` and
+`RUN_E2E_GOLDEN=true npm run test:e2e`. Do not use that assignment syntax in PowerShell.
+
+Live tests create unique temporary accounts and scoped records and clean up only
+their own users. The guard always rejects the shared reference database.
+
+## Deployment
+
+This is SSR, not a static SPA. `npm.cmd run build` creates a Node server;
+`npm.cmd start` runs it with the local ignored environment. Use
+`npm.cmd run build:vercel` for the independent Vercel build in `vercel.json`.
+Create/link a separate Retraza hosting project; never reuse the event project.
+
+Set public Supabase variables before building and private server/provider
+variables in the destination platform secret store. Test the exact preview's
+callbacks, full authenticated lifecycle, RLS, refresh and relogin before release.
+No deployment or production domain change has been performed by this integration.
+
+`node scripts/run-hosted-qa.mjs https://YOUR_RETRAZA_PREVIEW` runs public checks;
+live gates remain deliberate and require the isolated backend.
+`node scripts/audit-hosted-client.mjs https://YOUR_RETRAZA_PREVIEW` scans fetched
+public pages/assets. Neither script permits the reference deployment.
+
+Rollback by restoring the prior verified destination deployment. Preserve database
+data; review a forward-fix migration rather than resetting or dropping schema.
+
+## Architecture And Ownership
+
+[Architecture](docs/DEEP_TECHNICAL_ARCHITECTURE.md) explains the existing domain.
+RLS and ownership triggers protect user data; owner-scoped transaction RPCs own
+graph persistence, action state, check-ins, strategy selection and activation.
+Only one version may be active. Candidates require explicit acceptance and old
+versions remain available. Planning-data export fails visibly on incomplete reads.
+
+Supabase Storage remains the object-storage adapter. Notion remains a preserved
+future export contract, not a database. Lovable metadata, preview auth storage,
+error reporting and existing Git history are retained. Never force-push.

@@ -22,6 +22,38 @@
 
 ## Implementation Reconciliation Note
 
+### Retraza Parity Integration - October 19, 2026
+
+The current implementation reconciles the immutable VibeSprint reference
+`a58c529` while retaining Retraza ownership and multi-provider portability.
+Gemini now uses the official Google adapter; compatible Groq and explicitly
+allowlisted optional providers remain. Compact prompts, schema and graph checks,
+bounded retries, safe diagnostics, quota checks and atomic idempotency claims
+protect the inference boundary. Mock mode remains deterministic.
+
+Eight committed migrations define the authoritative schema. The four imported
+hardening migrations restrict internal helpers and introduce owner-scoped
+SECURITY INVOKER transaction RPCs: update_execution_node, persist_plan_graph,
+save_plan_check_in and select_plan_strategy. Graph/version writes and activation
+commit together; failed action/check-in edits roll back. PostgreSQL allocates
+version numbers under a plan lock and enforces one active version.
+
+Authentication handles initialization, session races, callback sanitization,
+confirmation-required signup and actionable failure states. Query keys include
+the user identity. Strategy-filtered frontier/progress retain hard prerequisites.
+The public /demo is prepared browser-only data, not live AI or database content.
+Planning export fails rather than silently returning partial data.
+
+Native Vite/TanStack/Nitro plugins support Node and independent Vercel SSR builds.
+Fonts ship locally with their license notices. Retraza-only Lovable metadata,
+preview storage, error reporting, object-storage and Notion contracts are retained.
+
+The shared reference database is strictly read-only. The imported migrations
+have been executed only in isolated PGlite PostgreSQL tests. Remote migration
+application, live destination Auth/RLS and the authenticated Golden Path remain
+BLOCKED pending an isolated Retraza backend. See VIBESPRINT_PARITY_REPORT.md and
+RETRAZA_RELEASE_READINESS.md for fresh evidence; the older text below is historical.
+
 As of 2026-09-03 this repository contains a TanStack Start/React/TypeScript implementation with Supabase migrations, server-side AI orchestration, structured AI schemas, authenticated server functions, plan graph persistence, executable-frontier logic, action/check-in/replan flows, deterministic mock AI for no-cost tests, provider-router coverage, integration-style Golden Path coverage, database/RLS migration validation, and Playwright browser guard coverage.
 
 This note updates the original pre-implementation baseline without replacing the deeper target architecture. The implementation is authoritative where it differs from the draft sections below.
