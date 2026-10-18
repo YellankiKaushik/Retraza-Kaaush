@@ -41,6 +41,8 @@ Added Node/Vercel SSR build scripts, environment/secret/release/hosted checks an
 licensed local fonts. Preserved Retraza-only integrations and Lovable identity.
 Patched the confirmed TanStack advisory and compatible transitive vulnerabilities.
 Normal tests stay deterministic; explicit guards refuse the shared backend.
+The default browser fixture intercepts Supabase requests locally, including
+auth callback regressions. It never sends them to the configured shared service.
 
 Complete file inventory and exceptions: VIBESPRINT_PARITY_REPORT.md.
 Manual isolated-backend/deployment steps: RETRAZA_RELEASE_READINESS.md.
