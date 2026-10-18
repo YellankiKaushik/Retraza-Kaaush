@@ -156,12 +156,15 @@ export const submitClarification = createServerFn({ method: "POST" })
             if (error) throw new Error(error.message);
         }
 
-        const { error: updateError } = await supabase
+        const { data: updated, error: updateError } = await supabase
             .from("intake_cases")
             .update({ status: "READY_FOR_PLANNING" })
             .eq("id", data.caseId)
-            .eq("user_id", userId);
+            .eq("user_id", userId)
+            .select("id")
+            .maybeSingle();
         if (updateError) throw new Error(updateError.message);
+        if (!updated) throw new Error("That objective could not be found.");
 
         return { ok: true, factsSaved: answered.length };
     });
@@ -188,12 +191,15 @@ export const deleteContextFact = createServerFn({ method: "POST" })
     .middleware([requireSupabaseAuth])
     .inputValidator((input: unknown) => z.object({ factId: z.string().uuid() }).parse(input))
     .handler(async ({ data, context }) => {
-        const { error } = await context.supabase
+        const { data: deleted, error } = await context.supabase
             .from("case_context_facts")
             .delete()
             .eq("id", data.factId)
-            .eq("user_id", context.userId);
+            .eq("user_id", context.userId)
+            .select("id")
+            .maybeSingle();
         if (error) throw new Error(error.message);
+        if (!deleted) throw new Error("That context fact could not be found.");
         return { ok: true };
     });
 
@@ -212,7 +218,7 @@ export const updateObjective = createServerFn({ method: "POST" })
             .parse(input),
     )
     .handler(async ({ data, context }) => {
-        const { error } = await context.supabase
+        const { data: updated, error } = await context.supabase
             .from("intake_cases")
             .update({
                 normalized_title: data.title,
@@ -221,7 +227,10 @@ export const updateObjective = createServerFn({ method: "POST" })
                 time_horizon: data.timeHorizon ? { text: data.timeHorizon } : null,
             })
             .eq("id", data.caseId)
-            .eq("user_id", context.userId);
+            .eq("user_id", context.userId)
+            .select("id")
+            .maybeSingle();
         if (error) throw new Error(error.message);
+        if (!updated) throw new Error("That objective could not be found.");
         return { ok: true };
     });

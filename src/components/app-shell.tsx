@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
@@ -7,6 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 export function AppShell({ children }: { children: ReactNode }) {
     const { user, signOut } = useAuth();
     const navigate = useNavigate();
+    const [signingOut, setSigningOut] = useState(false);
 
     return (
         <div className="min-h-screen blueprint-grid">
@@ -34,9 +36,18 @@ export function AppShell({ children }: { children: ReactNode }) {
                                 <Button
                                     variant="outline"
                                     size="sm"
+                                    disabled={signingOut}
                                     onClick={async () => {
-                                        await signOut();
-                                        navigate({ to: "/auth" });
+                                        if (signingOut) return;
+                                        setSigningOut(true);
+                                        try {
+                                            await signOut();
+                                            await navigate({ to: "/auth" });
+                                        } catch (error) {
+                                            toast.error((error as Error).message);
+                                        } finally {
+                                            setSigningOut(false);
+                                        }
                                     }}
                                 >
                                     Sign out

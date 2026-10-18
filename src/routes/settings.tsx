@@ -32,6 +32,7 @@ function Settings() {
     const navigate = useNavigate();
     const runExport = useServerFn(exportUserData);
     const [exporting, setExporting] = useState(false);
+    const [signingOut, setSigningOut] = useState(false);
 
     useEffect(() => {
         if (!loading && !user) navigate({ to: "/auth" });
@@ -53,8 +54,8 @@ function Settings() {
                 <section className="panel p-5">
                     <p className="label-mono">Data export</p>
                     <p className="mt-2 text-sm text-muted-foreground">
-                        Download every objective, context fact, plan version, node, edge, action, assumption,
-                        risk and check-in stored against your account as JSON.
+                        Download every objective, context fact, plan version, node, edge, action,
+                        assumption, risk and check-in stored against your account as JSON.
                     </p>
                     <Button
                         className="mt-4"
@@ -90,9 +91,18 @@ function Settings() {
                     <Button
                         className="mt-4"
                         variant="outline"
+                        disabled={signingOut}
                         onClick={async () => {
-                            await signOut();
-                            navigate({ to: "/auth" });
+                            if (signingOut) return;
+                            setSigningOut(true);
+                            try {
+                                await signOut();
+                                await navigate({ to: "/auth" });
+                            } catch (error) {
+                                toast.error((error as Error).message);
+                            } finally {
+                                setSigningOut(false);
+                            }
                         }}
                     >
                         Sign out

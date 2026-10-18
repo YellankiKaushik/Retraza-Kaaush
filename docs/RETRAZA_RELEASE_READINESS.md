@@ -21,10 +21,10 @@ Verdict: **B - CODE COMPLETE, LIVE DATABASE/DEPLOYMENT APPROVAL REQUIRED**.
 | Typecheck                             |      1 |      0 | 0                                              |
 | Lint                                  |      1 |      0 | 0; six existing Fast Refresh warnings          |
 | Unit                                  |     76 |      0 | 0                                              |
-| Deterministic integration             |     13 |      0 | 11 gated live integration cases skipped        |
+| Deterministic integration             |     27 |      0 | 11 gated live integration cases skipped        |
 | Local PostgreSQL/PGlite               |     12 |      0 | 0                                              |
-| Public/browser                        |     17 |      0 | 13 live/gated browser cases                    |
-| Production Node public subset         |      8 |      0 | 0                                              |
+| Public/browser                        |     28 |      0 | 13 live/gated browser cases                    |
+| Production Node public subset         |     19 |      0 | 0                                              |
 | Node build                            |      1 |      0 | 0                                              |
 | Vercel build                          |      1 |      0 | 0                                              |
 | Source/history/client secret scan     |      1 |      0 | 0 findings                                     |
@@ -35,10 +35,10 @@ Verdict: **B - CODE COMPLETE, LIVE DATABASE/DEPLOYMENT APPROVAL REQUIRED**.
 | Live email/Google/password acceptance |      0 |      0 | BLOCKED; no inbox/callback claim               |
 | Hosted preview/production             |      0 |      0 | Not deployed or tested                         |
 
-Normal npm test total: **101 passed, 0 failed, 11 skipped**.
+Normal npm test total: **115 passed, 0 failed, 11 skipped**.
 Do not sum overlapping rows as additional test cases. Build/check rows count
 successful invocations, not assertion counts. Prior baseline 76 tests passed;
-25 additional deterministic assertions now pass.
+39 additional deterministic cases now pass, including 14 final source-parity handler cases.
 
 Live provider evidence: Gemini minimal smoke PASS; Groq initially failed tiny
 128-token smoke, then passed a focused 512-token retest (reasoning budget).
@@ -47,6 +47,14 @@ valid. OpenRouter OPTIONAL UNAVAILABLE (401); OpenAI model not configured.
 These calls did not connect to Supabase. No repeated unchanged inference runs.
 
 ## Defects Fixed
+
+Final source-parity pass added 14 actual-handler and 11 intercepted browser
+regressions. Zero-row objective/context mutations now fail visibly; initial
+generation fails on missing context reads, requires replan for already-active
+plans and preserves claims after saved-graph bookkeeping failures. Logout reports
+remote revocation failure without falsely retaining a local authenticated session.
+Public visual parity was inspected across 18 screenshots; authenticated layout
+was exercised at 1440/768/390px without remote writes.
 
 - Empty graph identifiers and dangling assumption validation links now fail validation.
 - Missing hard prerequisites no longer incorrectly unlock executable frontier nodes.
@@ -90,4 +98,4 @@ not block Gemini/Groq demo routing.
 - [Independent deployment and rollback](PRODUCTION_DEPLOYMENT_CHECKLIST.md)
 
 Safe next command: `npm.cmd run check:shared` (GET-only).
-Local production demo: http://127.0.0.1:5174/demo.
+Local production demo: http://127.0.0.1:5175/demo.

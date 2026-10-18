@@ -65,6 +65,16 @@ export function useAuth() {
         user: session?.user ?? null,
         loading,
         error,
-        signOut: () => supabase.auth.signOut(),
+        signOut: async () => {
+            const { error: signOutError } = await supabase.auth.signOut();
+            if (signOutError) {
+                const current = await supabase.auth.getSession();
+                throw new Error(
+                    !current.error && !current.data.session
+                        ? "Signed out on this device, but server sign-out could not be confirmed. Other sessions may remain active."
+                        : "Sign out could not be completed. Please try again.",
+                );
+            }
+        },
     };
 }

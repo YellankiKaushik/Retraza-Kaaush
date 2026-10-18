@@ -51,6 +51,7 @@ export const generatePlan = createServerFn({ method: "POST" })
             data.idempotencyKey,
         );
         if (claim.replay) return claim.replay as { planId: string; versionId: string };
+        let planCommitted = false;
 
         try {
             await telemetry.assertWithinQuota(
@@ -66,6 +67,7 @@ export const generatePlan = createServerFn({ method: "POST" })
                 .eq("id", data.caseId)
                 .eq("user_id", userId)
                 .maybeSingle();
+            if (caseRow.error) throw new Error("The objective could not be loaded.");
             if (!caseRow.data)
                 throw new DomainError("FORBIDDEN", "That intake could not be found.");
             if (caseRow.data.status === "REJECTED")
@@ -79,6 +81,19 @@ export const generatePlan = createServerFn({ method: "POST" })
                 .select("category, key, value")
                 .eq("case_id", data.caseId)
                 .eq("user_id", userId);
+            if (facts.error) throw new Error("Planning context could not be loaded.");
+
+            const existing = await supabase
+                .from("plans")
+                .select("id, active_version_id")
+                .eq("case_id", data.caseId)
+                .eq("user_id", userId)
+                .maybeSingle();
+            if (existing.error) throw new Error("The existing plan could not be loaded.");
+            if (existing.data?.active_version_id)
+                throw new Error(
+                    "This objective already has an active plan. Use replan to review a new version.",
+                );
 
             const correlationId = crypto.randomUUID();
             const { data: proposal, meta } = await runPlanGeneration({
@@ -104,13 +119,6 @@ export const generatePlan = createServerFn({ method: "POST" })
             await telemetry.recordAiUsage(userId, meta);
 
             let planId: string;
-            const existing = await supabase
-                .from("plans")
-                .select("id")
-                .eq("case_id", data.caseId)
-                .eq("user_id", userId)
-                .maybeSingle();
-
             if (existing.data) {
                 planId = existing.data.id;
             } else {
@@ -140,12 +148,8 @@ export const generatePlan = createServerFn({ method: "POST" })
                 activate: true,
                 strategyPreference: data.strategyPreference,
             });
-
-            await supabase
-                .from("intake_cases")
-                .update({ status: "PLANNED" })
-                .eq("id", data.caseId)
-                .eq("user_id", userId);
+            // The persistence RPC commits activation and PLANNED status together.
+            planCommitted = true;
 
             const result = { planId, versionId, blocker: proposal.blocker ?? null };
             await telemetry.completeIdempotencyKey(
@@ -163,13 +167,17 @@ export const generatePlan = createServerFn({ method: "POST" })
             });
             return result;
         } catch (error) {
-            if (!(error as Error & { preserveClaim?: boolean }).preserveClaim)
+            if (!planCommitted && !(error as Error & { preserveClaim?: boolean }).preserveClaim)
                 await telemetry.releaseIdempotencyKey(userId, "GENERATE_PLAN", data.idempotencyKey);
             const err = error as Error & {
                 code?: string;
                 meta?: Parameters<typeof telemetry.recordAiUsage>[1];
             };
             if (err.meta) await telemetry.recordAiUsage(userId, err.meta);
+            if (planCommitted)
+                throw new Error(
+                    "A plan was saved, but its request details could not be completed. Refresh before retrying.",
+                );
             throw new Error(err.message);
         }
     });

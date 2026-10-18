@@ -6,6 +6,11 @@ server-side AI, Zod validation and deterministic dependency/progress logic.
 
 ## Current Verification
 
+The latest [source parity matrix](docs/FINAL_SOURCE_PARITY_MATRIX.md) records
+115 deterministic tests and 28 browser tests passing. Live shared acceptance is
+still blocked, not passed. [Owner actions](docs/OWNER_ACTIONS_REQUIRED.md) and
+the [deployment runbook](docs/RETRAZA_DEPLOYMENT_RUNBOOK.md) consolidate the next steps.
+
 The VibeSprint reference is immutable. Its historical release results are not
 Retraza verification. See [parity report](docs/VIBESPRINT_PARITY_REPORT.md),
 [release readiness](docs/RETRAZA_RELEASE_READINESS.md) and

@@ -249,12 +249,15 @@ export const deleteCase = createServerFn({ method: "POST" })
     .middleware([requireSupabaseAuth])
     .inputValidator((input: unknown) => z.object({ caseId: z.string().uuid() }).parse(input))
     .handler(async ({ data, context }) => {
-        const { error } = await context.supabase
+        const { data: deleted, error } = await context.supabase
             .from("intake_cases")
             .delete()
             .eq("id", data.caseId)
-            .eq("user_id", context.userId);
+            .eq("user_id", context.userId)
+            .select("id")
+            .maybeSingle();
         if (error) throw new Error(error.message);
+        if (!deleted) throw new Error("That objective could not be found.");
 
         const telemetry = await import("@/lib/telemetry.server");
         await telemetry.recordAudit({

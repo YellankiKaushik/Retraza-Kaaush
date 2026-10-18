@@ -1,5 +1,37 @@
 # VibeSprint Parity Report
 
+## Final Production-Source Parity Checkpoint
+
+October19, 2026. Compared production application 8b46434cf02fb59b06417d3e5923e845f8af4707
+against existing destination a6c989d plus focused local fixes. All eight migration
+files, shared contracts/prompts and workspace implementation remain aligned.
+No source repository, Auth configuration, database, hosting or GitHub writes.
+
+Latest counts supersede earlier counts below: 76 unit +27 deterministic
+integration +12 SQL =115 passed, zero failed,11 live skips. Browser28 passed,
+zero failed,13 skipped. Production Node subset19 passed; both builds, environment,
+lint (six old warnings), source/history/client scan and audit pass.
+
+Newly reproduced/fixed: zero-row objective/context mutations reporting success;
+generation proceeding on failed source/fact/plan reads; initial regeneration
+over already-active plan; post-save generation claim release. Remote logout
+failure now distinguishes local signout from unconfirmed global revocation.
+Regression files: owned-mutations.test.ts (8), generation-failures.test.ts (6),
+local-workspace.spec.ts (11). Test doubles are not live acceptance evidence.
+
+New docs: FINAL_SOURCE_PARITY_MATRIX.md, RETRAZA_DEPLOYMENT_RUNBOOK.md and
+OWNER_ACTIONS_REQUIRED.md. scripts/compare-public-visuals.mjs captured18 public
+source/destination screenshots at three widths; inspected pairs align. Full
+destination workspace/settings render without horizontal overflow at all sizes.
+
+User workflow: no further intermediate questions for deferrable external info.
+Catalog remains absent; remote compatibility, live RLS/Golden Path/auth and hosted
+acceptance BLOCKED. Do not manufacture evidence or enable approval. Exact next
+owner step is SQL Editor read-only catalog export to logs/shared-catalog.json;
+then local comparison, then explicit scope approval BEFORE any shared writes.
+No second Supabase project/account required. Owner alone pushes/deploys.
+Current local production app: http://127.0.0.1:5175/demo.
+
 ## October 19 Controlled Release Checkpoint
 
 This section supersedes older isolated-backend-only instructions below.

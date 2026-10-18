@@ -1,5 +1,37 @@
 # Final Local Verification
 
+## Final Production-Source Parity Checkpoint
+
+October19, 2026. Compared production application 8b46434cf02fb59b06417d3e5923e845f8af4707
+against existing destination a6c989d plus focused local fixes. All eight migration
+files, shared contracts/prompts and workspace implementation remain aligned.
+No source repository, Auth configuration, database, hosting or GitHub writes.
+
+Latest counts supersede earlier counts below: 76 unit +27 deterministic
+integration +12 SQL =115 passed, zero failed,11 live skips. Browser28 passed,
+zero failed,13 skipped. Production Node subset19 passed; both builds, environment,
+lint (six old warnings), source/history/client scan and audit pass.
+
+Newly reproduced/fixed: zero-row objective/context mutations reporting success;
+generation proceeding on failed source/fact/plan reads; initial regeneration
+over already-active plan; post-save generation claim release. Remote logout
+failure now distinguishes local signout from unconfirmed global revocation.
+Regression files: owned-mutations.test.ts (8), generation-failures.test.ts (6),
+local-workspace.spec.ts (11). Test doubles are not live acceptance evidence.
+
+New docs: FINAL_SOURCE_PARITY_MATRIX.md, RETRAZA_DEPLOYMENT_RUNBOOK.md and
+OWNER_ACTIONS_REQUIRED.md. scripts/compare-public-visuals.mjs captured18 public
+source/destination screenshots at three widths; inspected pairs align. Full
+destination workspace/settings render without horizontal overflow at all sizes.
+
+User workflow: no further intermediate questions for deferrable external info.
+Catalog remains absent; remote compatibility, live RLS/Golden Path/auth and hosted
+acceptance BLOCKED. Do not manufacture evidence or enable approval. Exact next
+owner step is SQL Editor read-only catalog export to logs/shared-catalog.json;
+then local comparison, then explicit scope approval BEFORE any shared writes.
+No second Supabase project/account required. Owner alone pushes/deploys.
+Current local production app: http://127.0.0.1:5175/demo.
+
 October 19, 2026. Destination: Retraza-Kaaush, feat/vibesprint-parity.
 Starting SHA: cd72ae7d2bd0713bec013f7affc9583aac5b3cbe.
 Reference SHA unchanged: a58c52921b5eb21287446aff998c196b49e2d100.
@@ -14,14 +46,14 @@ privately; this report contains configuration names only.
 | npm.cmd run typecheck                     |      1 |      0 |       0 |
 | npm.cmd run lint                          |      1 |      0 |       0 |
 | npm.cmd run test:unit                     |     76 |      0 |       0 |
-| npm.cmd run test:integration              |     13 |      0 |      11 |
+| npm.cmd run test:integration              |     27 |      0 |      11 |
 | npm.cmd run test:db                       |     12 |      0 |       0 |
-| npm.cmd test                              |    101 |      0 |      11 |
+| npm.cmd test                              |    115 |      0 |      11 |
 | npm.cmd run build:node                    |      1 |      0 |       0 |
 | npm.cmd run build:vercel                  |      1 |      0 |       0 |
 | npm.cmd run check:release                 |      1 |      0 |       0 |
-| Public/browser suite inside release check |     17 |      0 |      13 |
-| Production Node auth-guard/demo subset    |      8 |      0 |       0 |
+| Public/browser suite inside release check |     28 |      0 |      13 |
+| Production Node browser subset            |     19 |      0 |       0 |
 | node scripts/scan-secrets.mjs --history   |      1 |      0 |       0 |
 | Production fetched client audit           |      1 |      0 |       0 |
 | npm.cmd audit --json                      |      1 |      0 |       0 |
@@ -37,9 +69,14 @@ Ignored evidence logs: controlled-baseline-_.log, controlled-final-release.log,
 controlled-final-vercel.log, controlled-node-server_.log. npm run check:release
 forces every live gate false, AI mock and shared mode read-only independently
 of .env. Tests use intercepted network or isolated in-memory PostgreSQL.
-Public production browser subset uses http://127.0.0.1:5174.
+Public production browser subset uses http://127.0.0.1:5175.
 
 ## Live AI (Not Database Evidence)
+
+These provider results belong to the preceding October19 completion checkpoint.
+The final source-comparison phase made no new inference calls: adapters/prompts
+were unchanged, so repeating live requests would add quota use, not evidence for
+the affected mutation/auth UI fixes.
 
 - Gemini minimal structured response: 1 passed / 0 failed.
 - Groq first minimal response: 0 passed / 1 failed at 128 output tokens.
