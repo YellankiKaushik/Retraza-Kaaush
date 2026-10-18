@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { loadEnv } from "vite";
-import { assertRequestedDatabaseTestsAreSafe } from "./test-environment.mjs";
+import { assertRequestedDatabaseTestsAreSafe, sharedTestApproval } from "./test-environment.mjs";
 
 function loadProjectEnv() {
     const mode = process.env.MODE ?? process.env.NODE_ENV ?? "test";
@@ -50,6 +50,17 @@ assertRequestedDatabaseTestsAreSafe();
 
 const port = Number(process.env.PLAYWRIGHT_PORT ?? 4173);
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${port}`;
+const sharedApproval =
+    process.env.RETRAZA_TEST_BACKEND_MODE === "controlled-shared" ? sharedTestApproval() : null;
+if (
+    sharedApproval &&
+    (process.argv.slice(2).length !== 1 ||
+        process.argv[2]?.replaceAll("\\", "/") !== "tests/e2e/golden-path.live-supabase.spec.ts" ||
+        sharedApproval.appOrigin !== new URL(baseURL).origin)
+)
+    throw new Error(
+        "Shared approval permits only the reviewed Golden Path file and exact app origin.",
+    );
 
 function spawnNode(args, options = {}) {
     return spawn(process.execPath, args, {
@@ -116,6 +127,7 @@ async function run() {
     try {
         if (server) await waitForServer(baseURL);
         const args = ["./node_modules/@playwright/test/cli.js", "test", ...process.argv.slice(2)];
+        if (sharedApproval) args.push("--workers=1", "--retries=0", "--trace=off");
         const testProcess = spawnNode(args, {
             env: {
                 ...process.env,

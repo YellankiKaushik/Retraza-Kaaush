@@ -9,6 +9,9 @@ const env = {
     RUN_SUPABASE_RLS_TESTS: "false",
     RUN_E2E_GOLDEN: "false",
     RUN_E2E_SIGNUP: "false",
+    RETRAZA_TEST_BACKEND_MODE: "read-only",
+    RETRAZA_SHARED_TEST_APPROVAL_FILE: "",
+    RETRAZA_TEST_RUN_ID: "",
 };
 for (const args of [
     ["scripts/check-env.mjs"],

@@ -32,6 +32,14 @@ const edge = (
 });
 
 describe("computeFrontier", () => {
+    it("fails closed when a hard prerequisite is missing from the supplied graph", () => {
+        const frontier = computeFrontier(
+            [node({ id: "action", title: "Execute" })],
+            [edge({ from_node_id: "missing", to_node_id: "action" })],
+        );
+        expect(frontier.ready).toHaveLength(0);
+        expect(frontier.blocked).toHaveLength(1);
+    });
     it("executes the selected strategy without requiring alternative-route work", () => {
         const nodes = [
             node({ id: "shared", title: "Shared prerequisite", status: "DONE" }),

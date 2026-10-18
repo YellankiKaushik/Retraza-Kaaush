@@ -1,5 +1,73 @@
 # Retraza / ReversePath Handoff
 
+## Current Agent Handoff
+
+Working branch: feat/vibesprint-parity. Starting remote/local commit:
+cd72ae7d2bd0713bec013f7affc9583aac5b3cbe. Read current local HEAD after the
+local-only completion commits; no remote publish is authorized.
+
+Changed runtime files: src/domain/frontier.ts, src/lib/planner.server.ts,
+src/lib/planning.functions.ts. Safety tooling: scripts/test-environment.mjs,
+shared-test-fetch.mjs, shared-preflight.mjs, verify-shared-catalog.mjs,
+run-e2e.mjs, final-release-audit.mjs, vitest.config.ts and package.json.
+Test changes: tests/helpers/test-env.ts; tests/unit frontier/planner-validation,
+shared-approval and algorithm-scenarios; tests/integration replan-failures,
+shared-preflight, supabase-rls.live and live-ai-smoke; E2E fixtures and Golden Path.
+Prepared SQL: supabase/SHARED_READ_ONLY_PREFLIGHT.sql (GET-equivalent catalog,
+read-only transaction). No versioned migration files changed this task.
+Docs: README, AGENTS, .env.example and all current release runbooks/reports.
+
+Required env NAMES only: VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY,
+SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY,
+AI_PROVIDER_MODE, GEMINI_API_KEY/GEMINI_MODEL_*, GROQ_API_KEY/GROQ_MODEL_*,
+AI_ROUTE_*, AI_PROVIDER_ALLOWLIST, AI_PROVIDER_MAX_RETRIES and existing quotas.
+Default test mode: RETRAZA_TEST_BACKEND_MODE=read-only.
+Owner-controlled optional approval: RETRAZA_SHARED_TEST_APPROVAL_FILE,
+RETRAZA_TEST_RUN_ID; single matching RUN_SUPABASE_RLS_TESTS or RUN_E2E_GOLDEN gate.
+SUPABASE_TEST_* overrides optional; never mark known shared host isolated.
+No actual approval file or enabled write gate was created by the agent.
+
+Exact next agent action: once the owner reconnects the owning account, inspect
+only project usvopldwiwzlvoqawvcu catalog/ledger read-only. Current connector
+still returns permission denied. Export SQL result if necessary and run
+node scripts/verify-shared-catalog.mjs logs/shared-catalog.json locally.
+If compatible, present the documented scope/users/tables/cleanup/quota/rollback
+checkpoint and WAIT for explicit owner approval before any shared mutations.
+If incompatible, propose precise pending changes for separate approval; do not
+apply migrations automatically. Continue to preserve VibeSprint and PR #1.
+No local commit authorizes push. Owner alone publishes via manual runbook.
+
+## October 19 Controlled Release Checkpoint
+
+This section supersedes older isolated-backend-only instructions below.
+Shared Supabase reuse is allowed, default READ-ONLY, with verified catalog and
+explicit project-specific owner approval before any mutations. No second
+account/project required. No GitHub writes or deployment authorized this task.
+
+Final local evidence: 76 unit + 13 deterministic integration + 12 local SQL =
+101 passed / 0 failed / 11 gated live integration skipped. Browser 17 passed /
+0 failed / 13 skipped; production Node public subset 8 passed. Typecheck, lint
+(zero errors/six old warnings), Node/Vercel builds, source/history/client scan
+and dependency audit pass. Gemini/Groq real PM intake+graph pass; OpenRouter
+optional unavailable. Live RLS/authenticated Golden Path remain BLOCKED.
+
+Implemented focused fixes: empty/dangling graph references, missing-prerequisite
+frontier, replan read/write/error/version consistency, sanitized provider smoke
+errors and reasoning budget. Added owner-scoped shared approval/network guards,
+GET-only API preflight, read-only catalog SQL/local comparator and real-handler
+regression harness. Existing Retraza features and immutable reference preserved.
+
+API surface: shared project exposes all16 tables and five expected RPC signatures.
+Catalog/ledger/ACL/RLS/index compatibility remains UNKNOWN; owning-account
+reconnection is pending. No remote migrations, users, cleanup or Auth changes.
+Do not replay migrations merely because management access is absent.
+
+Current runbooks: [readiness](RETRAZA_RELEASE_READINESS.md),
+[local evidence](FINAL_LOCAL_VERIFICATION.md),
+[shared compatibility](SHARED_SUPABASE_COMPATIBILITY.md),
+[manual publishing](MANUAL_GITHUB_RELEASE.md),
+[deployment](PRODUCTION_DEPLOYMENT_CHECKLIST.md).
+
 Updated October 19, 2026. Branch: `feat/vibesprint-parity`.
 Application commit: `3b7a049057736d02dabb02fd685cf80b2f54764c`.
 Baseline: `ee2b22fc863c5c6369ad50f52a95a03dd3d94117`.

@@ -47,7 +47,8 @@ afterEach(() => {
 
 function isOptionalOpenRouterUnavailable(providerId: ProviderId, error: unknown) {
     if (providerId !== "openrouter") return false;
-    const anyError = error as { statusCode?: number; status?: number; message?: string } | undefined;
+    const anyError = error as
+        { statusCode?: number; status?: number; message?: string } | undefined;
     const status = anyError?.statusCode ?? anyError?.status;
     return status === 401 || /missing authentication|unauthorized/i.test(anyError?.message ?? "");
 }
@@ -77,21 +78,31 @@ describe("optional live AI provider smoke", () => {
                         schema: smokeSchema,
                         system: "Return the requested JSON object.",
                         prompt: "Set ok to true.",
-                        maxOutputTokens: 128,
+                        // Reasoning models need room for internal tokens even for tiny JSON.
+                        maxOutputTokens: provider.id === "groq" ? 512 : 128,
                         maxRetries: 0,
                         abortSignal: AbortSignal.timeout(30_000),
                     });
                 } catch (error) {
                     if (isOptionalOpenRouterUnavailable(provider.id, error)) {
-                        console.warn("OpenRouter optional unavailable: authentication was rejected.");
+                        console.warn(
+                            "OpenRouter optional unavailable: authentication was rejected.",
+                        );
                         context.skip();
                         return;
                     }
-                    throw error;
+                    const status =
+                        (error as { statusCode?: number; status?: number })?.statusCode ??
+                        (error as { status?: number })?.status;
+                    throw new Error(
+                        `${provider.id} smoke failed (HTTP ${status ?? "unknown"}); provider diagnostics withheld.`,
+                    );
                 }
 
                 expect(result.object.ok).toBe(true);
-                console.info(`${provider.id}: PASS; input tokens=${result.usage.inputTokens ?? "unknown"}; output tokens=${result.usage.outputTokens ?? "unknown"}`);
+                console.info(
+                    `${provider.id}: PASS; input tokens=${result.usage.inputTokens ?? "unknown"}; output tokens=${result.usage.outputTokens ?? "unknown"}`,
+                );
             },
             45_000,
         );

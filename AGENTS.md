@@ -16,10 +16,15 @@
 - Implementation destination: Retraza-Kaaush only.
 - The vibesprint-source remote is an immutable read-only reference at
   a58c52921b5eb21287446aff998c196b49e2d100. Never push or deploy that project.
-- The Supabase backend currently configured in the local .env is shared and
-  strictly read-only. Do not apply remote migrations, create users, run SQL writes,
-  clean up users or enable live database tests until a dedicated Retraza backend
-  is configured. The test guard must remain fail-closed.
+- The configured Supabase backend is shared and read-only by default. Reuse is
+  allowed; another account/project is not required. Verify its actual catalog
+  before proposing changes. Remote schema/Auth changes and test writes require
+  explicit owner approval at the documented project-specific checkpoint.
+  Never pretend this host is isolated. Preserve fail-closed guards and exact-run
+  ownership checks before cleanup. Do not manufacture owner approval files.
+- No GitHub writes, pushes, PR updates, merges, workflow dispatches or deployment
+  are authorized. Local commits are allowed; inspect/disable publishing hooks.
+  The owner alone performs publishing using docs/MANUAL_GITHUB_RELEASE.md.
 - Use npm/package-lock.json for release verification. Normal tests are deterministic;
   local PostgreSQL tests use PGlite without a remote connection.
 - Keep all private credentials server-only. Never print values.

@@ -1,5 +1,6 @@
 import { loadEnv } from "vite";
 import { assertRequestedDatabaseTestsAreSafe } from "../../scripts/test-environment.mjs";
+import { guardSharedTestFetch } from "../../scripts/shared-test-fetch.mjs";
 
 let loaded = false;
 
@@ -59,6 +60,7 @@ export function isModernSupabaseApiKey(value: string) {
 }
 
 export function createSupabaseTestFetch(supabaseKey: string): typeof fetch {
+    const guarded = guardSharedTestFetch(fetch);
     return (input, init) => {
         const headers = new Headers(
             typeof Request !== "undefined" && input instanceof Request ? input.headers : undefined,
@@ -76,6 +78,6 @@ export function createSupabaseTestFetch(supabaseKey: string): typeof fetch {
         }
 
         headers.set("apikey", supabaseKey);
-        return fetch(input, { ...init, headers });
+        return guarded(input, { ...init, headers });
     };
 }

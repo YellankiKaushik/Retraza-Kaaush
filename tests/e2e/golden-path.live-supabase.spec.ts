@@ -27,6 +27,10 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
     test.skip(!runGolden, "Set RUN_E2E_GOLDEN=true with Supabase credentials to run this flow.");
 
     async function goldenWorkflow(page: Page, revisions: 1 | 2) {
+        test.skip(
+            revisions === 1 && process.env["RETRAZA_TEST_BACKEND_MODE"] === "controlled-shared",
+            "Shared approval covers one full two-user workflow, not an additional compact run.",
+        );
         test.skip(revisions === 1 && !liveMode, "The compact acceptance case requires real AI.");
         async function expectAiSuccess(
             success: ReturnType<typeof page.getByText>,
@@ -39,7 +43,7 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
             await expect(success).toBeVisible();
         }
         const password = "ReversePath-e2e-password-12345";
-        const runId = `reversepath-e2e-${crypto.randomUUID()}`;
+        const runId = `reversepath-e2e-${process.env["RETRAZA_TEST_RUN_ID"] || crypto.randomUUID()}`;
         const email = `${runId}-a@example.test`;
         const secondEmail = `${runId}-b@example.test`;
         const url = supabaseTestUrl()!;

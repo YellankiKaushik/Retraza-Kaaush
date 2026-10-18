@@ -188,6 +188,7 @@ export const replan = createServerFn({ method: "POST" })
 
         const claim = await telemetry.claimIdempotencyKey(userId, "REPLAN", data.idempotencyKey);
         if (claim.replay) return claim.replay as { versionId: string };
+        let candidateCommitted = false;
 
         try {
             await telemetry.assertWithinQuota(
@@ -203,6 +204,7 @@ export const replan = createServerFn({ method: "POST" })
                 .eq("id", data.planId)
                 .eq("user_id", userId)
                 .maybeSingle();
+            if (plan.error) throw new Error("The current plan could not be loaded.");
             if (!plan.data?.active_version_id)
                 throw new DomainError(
                     "INVALID_REQUEST",
@@ -217,9 +219,17 @@ export const replan = createServerFn({ method: "POST" })
                 supabase.from("plan_nodes").select("*").eq("plan_version_id", activeVersionId),
                 supabase.from("plan_edges").select("*").eq("plan_version_id", activeVersionId),
             ]);
+            if (
+                [caseRow, activeVersion, nodes, edges].some((result) => result.error) ||
+                !caseRow.data ||
+                !activeVersion.data
+            )
+                throw new Error(
+                    "The current plan and context could not be loaded. Please try again.",
+                );
 
             if (data.changedFacts.length > 0) {
-                await supabase.from("case_context_facts").insert(
+                const changed = await supabase.from("case_context_facts").insert(
                     data.changedFacts.map((f) => ({
                         user_id: userId,
                         case_id: planRow.case_id,
@@ -230,6 +240,7 @@ export const replan = createServerFn({ method: "POST" })
                         confidence: 1,
                     })),
                 );
+                if (changed.error) throw new Error("Changed context facts could not be saved.");
             }
 
             const facts = await supabase
@@ -237,6 +248,7 @@ export const replan = createServerFn({ method: "POST" })
                 .select("category, key, value")
                 .eq("case_id", planRow.case_id)
                 .eq("user_id", userId);
+            if (facts.error) throw new Error("Planning context could not be loaded.");
 
             const before = snapshotText({
                 nodes: (nodes.data ?? []) as never,
@@ -270,7 +282,7 @@ export const replan = createServerFn({ method: "POST" })
             await telemetry.recordAiUsage(userId, meta);
 
             const versionNumber = await nextVersionNumber(supabase, data.planId);
-            const { versionId } = await persistProposal({
+            const { versionId, versionNumber: persistedVersionNumber } = await persistProposal({
                 supabase,
                 userId,
                 planId: data.planId,
@@ -284,6 +296,7 @@ export const replan = createServerFn({ method: "POST" })
                 promptVersion: PROMPT_VERSION,
                 activate: false,
             });
+            candidateCommitted = true;
 
             // FR-019 — "what changed" before activation.
             const afterNodes = await supabase
@@ -294,6 +307,8 @@ export const replan = createServerFn({ method: "POST" })
                 .from("plan_edges")
                 .select("*")
                 .eq("plan_version_id", versionId);
+            if (afterNodes.error || afterEdges.error)
+                throw new Error("The saved candidate could not be loaded for comparison.");
             const after = snapshotText({
                 nodes: (afterNodes.data ?? []) as never,
                 edges: (afterEdges.data ?? []) as never,
@@ -337,10 +352,16 @@ export const replan = createServerFn({ method: "POST" })
             }
 
             if (changeRows.length > 0) {
-                await supabase.from("plan_changes").insert(changeRows);
+                const savedChanges = await supabase.from("plan_changes").insert(changeRows);
+                if (savedChanges.error)
+                    throw new Error("The candidate comparison could not be saved.");
             }
 
-            const result = { versionId, versionNumber, requiresAcceptance: true };
+            const result = {
+                versionId,
+                versionNumber: persistedVersionNumber,
+                requiresAcceptance: true,
+            };
             await telemetry.completeIdempotencyKey(userId, "REPLAN", data.idempotencyKey, result);
             await telemetry.recordAudit({
                 userId,
@@ -351,10 +372,17 @@ export const replan = createServerFn({ method: "POST" })
             });
             return result;
         } catch (error) {
-            if (!(error as Error & { preserveClaim?: boolean }).preserveClaim)
+            if (
+                !candidateCommitted &&
+                !(error as Error & { preserveClaim?: boolean }).preserveClaim
+            )
                 await telemetry.releaseIdempotencyKey(userId, "REPLAN", data.idempotencyKey);
             const err = error as Error & { meta?: Parameters<typeof telemetry.recordAiUsage>[1] };
             if (err.meta) await telemetry.recordAiUsage(userId, err.meta);
+            if (candidateCommitted)
+                throw new Error(
+                    "A revised plan was saved, but its review details could not be completed. Refresh before retrying.",
+                );
             throw new Error(err.message);
         }
     });

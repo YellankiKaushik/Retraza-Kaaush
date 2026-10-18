@@ -107,6 +107,21 @@ function expectDomainFailure(fn: () => unknown, message: RegExp) {
 }
 
 describe("validateProposal", () => {
+    it("rejects empty node and strategy identifiers", () => {
+        const node = validProposal();
+        node.nodes[1]!.tempId = "";
+        node.edges = [];
+        node.bottleneckTempId = null;
+        expectDomainFailure(() => validateProposal(node), /empty|identifier/i);
+        const strategy = validProposal();
+        strategy.strategies[1]!.key = "";
+        expectDomainFailure(() => validateProposal(strategy), /empty|identifier/i);
+    });
+    it("rejects dangling assumption validation links without dropping them", () => {
+        const proposal = validProposal();
+        proposal.assumptions[0]!.validationNodeTempId = "missing";
+        expectDomainFailure(() => validateProposal(proposal), /assumption.*node|validation.*node/i);
+    });
     it("rejects duplicate strategy keys before graph persistence", () => {
         const proposal = validProposal();
         proposal.strategies[1]!.key = proposal.strategies[0]!.key;

@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import type { Database } from "@/integrations/supabase/types";
 import { persistProposal } from "@/lib/planner.server";
+import { readUserExport } from "@/lib/data-export.server";
 import { mockPlanProposal } from "@/ai/mock-provider.server";
 import {
     createSupabaseTestFetch,
@@ -32,7 +33,7 @@ async function signIn(email: string, password: string): Promise<SupabaseClient<D
 }
 
 describeIfConfigured("live Supabase RLS two-user isolation", () => {
-    const runId = `reversepath-rls-${crypto.randomUUID()}`;
+    const runId = `reversepath-rls-${process.env["RETRAZA_TEST_RUN_ID"] || crypto.randomUUID()}`;
     const password = "ReversePath-test-password-12345";
     const users: string[] = [];
     let admin: SupabaseClient<Database>;
@@ -525,6 +526,12 @@ describeIfConfigured("live Supabase RLS two-user isolation", () => {
             .single();
         expect(readableByA.error).toBeNull();
         expect(readableByA.data?.id).toBe(ids.nodeId);
+        const deniedExport = await readUserExport(userB, userAId);
+        expect(Object.values(deniedExport).every((rows) => rows.length === 0)).toBe(true);
+        const ownExport = await readUserExport(userA, userAId);
+        expect(ownExport["plans"].some((row) => (row as { id: string }).id === ids.planId)).toBe(
+            true,
+        );
     }, 30_000);
 
     it("rejects child rows that point at another user's parent record", async () => {

@@ -1,5 +1,36 @@
 # VibeSprint Parity Report
 
+## October 19 Controlled Release Checkpoint
+
+This section supersedes older isolated-backend-only instructions below.
+Shared Supabase reuse is allowed, default READ-ONLY, with verified catalog and
+explicit project-specific owner approval before any mutations. No second
+account/project required. No GitHub writes or deployment authorized this task.
+
+Final local evidence: 76 unit + 13 deterministic integration + 12 local SQL =
+101 passed / 0 failed / 11 gated live integration skipped. Browser 17 passed /
+0 failed / 13 skipped; production Node public subset 8 passed. Typecheck, lint
+(zero errors/six old warnings), Node/Vercel builds, source/history/client scan
+and dependency audit pass. Gemini/Groq real PM intake+graph pass; OpenRouter
+optional unavailable. Live RLS/authenticated Golden Path remain BLOCKED.
+
+Implemented focused fixes: empty/dangling graph references, missing-prerequisite
+frontier, replan read/write/error/version consistency, sanitized provider smoke
+errors and reasoning budget. Added owner-scoped shared approval/network guards,
+GET-only API preflight, read-only catalog SQL/local comparator and real-handler
+regression harness. Existing Retraza features and immutable reference preserved.
+
+API surface: shared project exposes all16 tables and five expected RPC signatures.
+Catalog/ledger/ACL/RLS/index compatibility remains UNKNOWN; owning-account
+reconnection is pending. No remote migrations, users, cleanup or Auth changes.
+Do not replay migrations merely because management access is absent.
+
+Current runbooks: [readiness](RETRAZA_RELEASE_READINESS.md),
+[local evidence](FINAL_LOCAL_VERIFICATION.md),
+[shared compatibility](SHARED_SUPABASE_COMPATIBILITY.md),
+[manual publishing](MANUAL_GITHUB_RELEASE.md),
+[deployment](PRODUCTION_DEPLOYMENT_CHECKLIST.md).
+
 Date: October 19, 2026. Verdict: **C - PARTIAL PARITY, ADDITIONAL WORK REQUIRED**.
 The application-code integration and safe local verification are complete.
 Full destination acceptance remains blocked by the intentionally read-only shared backend.

@@ -33,6 +33,14 @@ export function assertOk<T>(
 
 /** Graph-integrity validation applied to every AI proposal before persistence. */
 export function validateProposal(proposal: PlanProposal) {
+    if (
+        proposal.nodes.some((node) => !node.tempId.trim()) ||
+        proposal.strategies.some((strategy) => !strategy.key.trim())
+    )
+        throw new DomainError(
+            "PLAN_VALIDATION_FAILED",
+            "Node and strategy identifiers cannot be empty.",
+        );
     const objectives = proposal.nodes.filter((n) => n.nodeType === "OBJECTIVE");
     if (objectives.length !== 1)
         throw new DomainError(
@@ -143,6 +151,16 @@ export function validateProposal(proposal: PlanProposal) {
             "PLAN_VALIDATION_FAILED",
             "The proposed bottleneck references a node that does not exist.",
         );
+
+    for (const assumption of proposal.assumptions) {
+        if (!assumption.validationNodeTempId) continue;
+        const validator = nodes.find((node) => node.tempId === assumption.validationNodeTempId);
+        if (!validator)
+            throw new DomainError(
+                "PLAN_VALIDATION_FAILED",
+                "An assumption validation link must reference an existing plan node.",
+            );
+    }
 
     return { nodes, edges };
 }

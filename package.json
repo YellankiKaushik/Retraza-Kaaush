@@ -12,6 +12,7 @@
         "check:env": "node scripts/check-env.mjs",
         "check:secrets": "node scripts/scan-secrets.mjs",
         "check:release": "node scripts/final-release-audit.mjs",
+        "check:shared": "node scripts/shared-preflight.mjs",
         "build:dev": "vite build --mode development",
         "preview": "vite preview",
         "typecheck": "tsc --noEmit",

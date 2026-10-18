@@ -11,9 +11,12 @@ Retraza verification. See [parity report](docs/VIBESPRINT_PARITY_REPORT.md),
 [release readiness](docs/RETRAZA_RELEASE_READINESS.md) and
 [handoff](docs/VIBE_SPRINT_HANDOFF.md) for actual results and remaining gates.
 
-**The currently configured shared Supabase backend is strictly read-only.**
-Do not migrate, create users, run authenticated tests, or clean up users there.
-Configure a dedicated Retraza or local backend before enabling live database tests.
+**The shared Supabase backend is read-only by default.** Reusing it is supported;
+a second account/project is not required. Remote writes require verified catalog
+compatibility and explicit project-specific owner approval for one controlled run.
+See [shared compatibility and approval checkpoint](docs/SHARED_SUPABASE_COMPATIBILITY.md).
+**No GitHub publishing or deployment is authorized for the coding agent.**
+The owner reviews and publishes manually using [the release runbook](docs/MANUAL_GITHUB_RELEASE.md).
 
 ## Install And Run
 
@@ -41,32 +44,29 @@ http://localhost:5173. Keep `AI_PROVIDER_MODE=mock` for deterministic developmen
 `/demo` works without login, database writes or inference. Its prepared PM plan,
 completion and reset use browser storage only and are explicitly labelled.
 
-## Dedicated Supabase Backend
+## Supabase Backend
 
-Use a Retraza-owned project, never the reference project's database.
-Set matching browser/server URLs and publishable keys:
+The existing shared project may be reused without changing its credentials.
+Keep matching browser/server URLs and publishable keys:
 
 - `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`
 - `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`: server-only; supports modern `sb_secret_` keys.
 
-For a fresh dedicated project, apply all eight committed migrations in order.
-For an existing dedicated project, inspect migration history and apply only pending
-files. Do not repair migration history to pretend SQL was applied.
-
-PowerShell (replace the project-ref placeholder):
+Run `npm.cmd run check:shared` for GET-only surface inspection. All eight
+migrations remain committed; do not replay them merely because their remote
+ledger is inaccessible. The API exposes all required tables/RPCs, but catalog/RLS
+compatibility still needs owner-account read access. Run the prepared
+`supabase/SHARED_READ_ONLY_PREFLIGHT.sql` in that project's SQL Editor and save
+its single catalog JSON value to an ignored local file. Compare locally:
 
 ```powershell
-npx.cmd supabase login
-npx.cmd supabase link --project-ref YOUR_RETRAZA_PROJECT_REF
-npx.cmd supabase migration list --linked
-npx.cmd supabase db push --dry-run
-npx.cmd supabase db push
+node scripts/verify-shared-catalog.mjs logs/shared-catalog.json
 ```
 
-Review the CLI output's target before applying. Never use a remote reset.
-Do not replay `FINAL_REMOTE_BOOTSTRAP.sql` or historical one-time repair files.
-The complete current schema is the versioned files in `supabase/migrations/`.
+Unknown or incompatible results block writes. Review precise differences with
+the owner before any migration, ledger repair, Auth change or acceptance test.
+Never reset a remote database or replay historical bootstrap/repair SQL.
 
 For local Supabase, install and start Docker Desktop, then:
 
@@ -80,10 +80,10 @@ Docker is required for the full local Supabase stack. It is not required for
 isolated in-memory PostgreSQL (PGlite), with a minimal Auth schema fixture.
 Those tests do not establish live Supabase Auth or PostgREST verification.
 
-In the dedicated Supabase dashboard, configure Site URL and Redirect URLs for
-your Retraza origin, `/auth`, and required localhost origins. Configure Google
-OAuth only with destination-owned credentials and its Supabase callback URL.
-Keep email confirmation enabled and verify actual delivery to an owned mailbox.
+With owner approval, add exact Retraza `/auth` redirect URLs to the shared
+project without overwriting VibeSprint's Site URL or existing redirect entries.
+Preserve Google OAuth configuration and email confirmation. Real inbox delivery
+and complete Google callbacks are separate acceptance gates, not mock evidence.
 
 ## AI Configuration
 
@@ -149,24 +149,18 @@ $env:RUN_LIVE_DEMO_PLAN="true"; npm.cmd run test:integration
 Remove-Item Env:RUN_LIVE_DEMO_PLAN
 ```
 
-After the dedicated/local backend and all migrations are verified, explicitly
-set `RETRAZA_TEST_BACKEND_ISOLATED=true` in its ignored test configuration.
-Optional `SUPABASE_TEST_URL`, `SUPABASE_TEST_PUBLISHABLE_KEY`, and
-`SUPABASE_TEST_SECRET_KEY` select a separate test backend. Legacy test anon/
-service-role names remain fallback aliases. A separate URL needs its own keys.
+Normal checks keep `RETRAZA_TEST_BACKEND_MODE=read-only` and live gates off.
+Controlled shared acceptance requires fresh schema evidence, an owner-authored
+approval file, one run UUID, scope, expiry and two-user budget. The agent never
+creates actual approval. See the compatibility report for the exact checkpoint.
+A truly isolated optional local backend can still use
+`RETRAZA_TEST_BACKEND_ISOLATED=true`; this flag never authorizes the shared host.
+Optional test key lookup prefers `SUPABASE_TEST_PUBLISHABLE_KEY` /
+`SUPABASE_TEST_SECRET_KEY` with legacy aliases, then matching application keys.
+Distinct test URLs require their own keys.
 
-```powershell
-$env:RUN_SUPABASE_RLS_TESTS="true"; npm.cmd run test:integration
-Remove-Item Env:RUN_SUPABASE_RLS_TESTS
-$env:RUN_E2E_GOLDEN="true"; npm.cmd run test:e2e
-Remove-Item Env:RUN_E2E_GOLDEN
-```
-
-Unix equivalents use `RUN_LIVE_AI_SMOKE=true npm run test:integration` and
-`RUN_E2E_GOLDEN=true npm run test:e2e`. Do not use that assignment syntax in PowerShell.
-
-Live tests create unique temporary accounts and scoped records and clean up only
-their own users. The guard always rejects the shared reference database.
+Unix env assignment such as `RUN_LIVE_AI_SMOKE=true npm run test:integration`
+is not PowerShell syntax. Use the PowerShell blocks above on Windows.
 
 ## Deployment
 
@@ -181,7 +175,7 @@ callbacks, full authenticated lifecycle, RLS, refresh and relogin before release
 No deployment or production domain change has been performed by this integration.
 
 `node scripts/run-hosted-qa.mjs https://YOUR_RETRAZA_PREVIEW` runs public checks;
-live gates remain deliberate and require the isolated backend.
+live gates remain deliberate and require verified schema and owner approval.
 `node scripts/audit-hosted-client.mjs https://YOUR_RETRAZA_PREVIEW` scans fetched
 public pages/assets. Neither script permits the reference deployment.
 

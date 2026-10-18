@@ -150,6 +150,10 @@ export function computeFrontier(
         const unmet = prerequisiteEdges
             .map((e) => byId.get(e.edge_type === "BLOCKED_BY" ? e.to_node_id : e.from_node_id))
             .filter((n): n is GraphNode => !!n && n.status !== "DONE");
+        const missingPrerequisite = prerequisiteEdges.some(
+            (edge) =>
+                !byId.has(edge.edge_type === "BLOCKED_BY" ? edge.to_node_id : edge.from_node_id),
+        );
 
         const w = readWeights(node);
         const leverage = dependencyLeverage(node.id, edges);
@@ -158,6 +162,7 @@ export function computeFrontier(
             Math.max(w.effortCost, EPSILON);
 
         const reasons: string[] = [];
+        if (missingPrerequisite) reasons.push("A hard prerequisite is missing from this plan.");
         if (node.status === "IN_PROGRESS") reasons.push("Already in progress");
         if (leverage > 1.5) reasons.push(`Unblocks ${Math.round(leverage - 1)} downstream item(s)`);
         if (w.urgency >= 4) reasons.push("Time-sensitive");
@@ -174,7 +179,8 @@ export function computeFrontier(
             blockedBy: unmet,
         };
 
-        if (unmet.length > 0 || node.status === "BLOCKED") blocked.push(candidate);
+        if (missingPrerequisite || unmet.length > 0 || node.status === "BLOCKED")
+            blocked.push(candidate);
         else ready.push(candidate);
     }
 

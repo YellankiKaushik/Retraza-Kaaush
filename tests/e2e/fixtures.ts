@@ -1,9 +1,11 @@
 import { test as base, expect } from "@playwright/test";
+import { assertRequestedDatabaseTestsAreSafe } from "../../scripts/test-environment.mjs";
 
 // Public regressions must not contact Supabase, even with real values in .env.
 // Individual tests may register narrower intercepted responses after this guard.
 export const test = base.extend({
     page: async ({ page }, runFixture) => {
+        assertRequestedDatabaseTestsAreSafe();
         const live = ["RUN_E2E_GOLDEN", "RUN_E2E_SIGNUP"].some(
             (name) => process.env[name] === "true",
         );
