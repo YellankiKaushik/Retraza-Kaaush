@@ -11,6 +11,7 @@ import {
     classifyAiError,
     isMockAiEnabled,
     maxProviderRetries,
+    maxOutputTokens,
     timeoutMs,
     type AiAttemptTelemetry,
     type ModelAlias,
@@ -131,6 +132,7 @@ async function callModel<S extends z.ZodType>(args: {
                     system: args.system,
                     prompt: args.prompt,
                     maxRetries: 0,
+                    maxOutputTokens: maxOutputTokens(),
                     abortSignal: AbortSignal.timeout(timeoutMs()),
                 });
 

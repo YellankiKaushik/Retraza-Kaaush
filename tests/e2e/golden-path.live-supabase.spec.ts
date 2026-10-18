@@ -112,12 +112,12 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
             await page
                 .getByPlaceholder(/switch into product design/i)
                 .fill(
-                    "I want to switch into product design within a year, but I have a full-time job and no portfolio.",
+                    "I want to become a product manager in six months. I currently have no PM experience, I work full-time, and I can dedicate 10 hours per week.",
                 );
             await page.getByRole("button", { name: /analyse objective/i }).click();
 
             await expect(
-                page.getByRole("heading", { name: /product design/i }),
+                page.getByRole("heading", { name: /product manag|\bPM\b/i }),
             ).toBeVisible();
             if (
                 await page
@@ -140,7 +140,7 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
                     });
                     if (/^label\b|^value$/i.test(accessibleName.trim())) continue;
                     await textbox.fill(
-                        "I have no portfolio yet, can commit five focused hours per week, know basic Figma, and prefer remote-friendly roles.",
+                        "I have no PM experience, work full-time, can dedicate 10 hours per week, and want a product manager role in six months.",
                     );
                 }
                 await page.getByRole("button", { name: /save answers/i }).click();
@@ -183,11 +183,20 @@ test.describe("optional authenticated ReversePath Golden Path", () => {
             await expect(page.locator("main").getByText(/^Execution frontier/)).toBeVisible();
             await expect(page.getByRole("button", { name: /^done$/i }).first()).toBeVisible();
 
+            const progressValue = page.getByText(/^\d+% · \d+\/\d+$/);
+            const initialProgress = (await progressValue.innerText()).match(/^(\d+)% · (\d+)\/(\d+)$/)!;
+            const expectedDone = Number(initialProgress[2]) + 1;
+            const total = Number(initialProgress[3]);
+            const expectedProgress = `${Math.round((expectedDone / total) * 100)}% · ${expectedDone}/${total}`;
+
             await page
                 .getByRole("button", { name: /^done$/i })
                 .first()
                 .click();
             await expect(page.locator("main").getByText(/\bDONE\b/).first()).toBeVisible();
+            await expect(progressValue).toHaveText(expectedProgress);
+            await page.reload();
+            await expect(progressValue).toHaveText(expectedProgress);
 
             await page
                 .getByPlaceholder(/what moved/i)

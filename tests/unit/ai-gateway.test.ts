@@ -5,6 +5,7 @@ import {
     classifyAiError,
     isMockAiEnabled,
     maxProviderRetries,
+    maxOutputTokens,
     routeForAlias,
     timeoutMs,
 } from "@/lib/ai-gateway.server";
@@ -19,6 +20,7 @@ const aiEnvKeys = [
     "AI_ROUTE_FALLBACK",
     "AI_PROVIDER_TIMEOUT_MS",
     "AI_PROVIDER_MAX_RETRIES",
+    "AI_MAX_OUTPUT_TOKENS",
     "GEMINI_ENABLED",
     "GEMINI_API_KEY",
     "GEMINI_MODEL_DEFAULT",
@@ -123,5 +125,14 @@ describe("AI provider router", () => {
         );
         expect(classifyAiError({ name: "AbortError" }).code).toBe("AI_PROVIDER_TIMEOUT");
         expect(classifyAiError({ status: 403 }).code).toBe("AI_POLICY_REJECTED");
+    });
+
+    it("uses the configured output budget and rejects invalid token limits", () => {
+        vi.stubEnv("AI_MAX_OUTPUT_TOKENS", "4096");
+        expect(maxOutputTokens()).toBe(4096);
+        for (const value of ["", "0", "-1", "1.5", "invalid"]) {
+            vi.stubEnv("AI_MAX_OUTPUT_TOKENS", value);
+            expect(maxOutputTokens()).toBe(12000);
+        }
     });
 });

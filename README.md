@@ -16,6 +16,15 @@ The authoritative architecture is in [docs/DEEP_TECHNICAL_ARCHITECTURE.md](docs/
 
 ## Install
 
+PowerShell:
+
+```powershell
+npm.cmd install
+Copy-Item .env.example .env
+```
+
+Unix shells:
+
 ```sh
 npm install
 cp .env.example .env

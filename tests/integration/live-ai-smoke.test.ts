@@ -29,6 +29,12 @@ const PROVIDERS: Array<{
         fastModelEnv: "OPENROUTER_MODEL_FAST",
         defaultModelEnv: "OPENROUTER_MODEL_DEFAULT",
     },
+    {
+        id: "openai",
+        keyEnv: "OPENAI_API_KEY",
+        fastModelEnv: "OPENAI_MODEL_FAST",
+        defaultModelEnv: "OPENAI_MODEL_DEFAULT",
+    },
 ];
 
 loadProjectEnv();
@@ -54,7 +60,7 @@ describe("optional live AI provider smoke", () => {
                 (!process.env[provider.fastModelEnv] && !process.env[provider.defaultModelEnv]),
         )(
             `${provider.id} returns a minimal schema-valid response`,
-            async () => {
+            async (context) => {
                 vi.stubEnv("AI_PROVIDER_MODE", "live");
                 vi.stubEnv("AI_PROVIDER_ALLOWLIST", provider.id);
                 vi.stubEnv("AI_ROUTE_FAST", provider.id);
@@ -71,18 +77,21 @@ describe("optional live AI provider smoke", () => {
                         schema: smokeSchema,
                         system: "Return the requested JSON object.",
                         prompt: "Set ok to true.",
+                        maxOutputTokens: 128,
                         maxRetries: 0,
                         abortSignal: AbortSignal.timeout(30_000),
                     });
                 } catch (error) {
                     if (isOptionalOpenRouterUnavailable(provider.id, error)) {
                         console.warn("OpenRouter optional unavailable: authentication was rejected.");
+                        context.skip();
                         return;
                     }
                     throw error;
                 }
 
                 expect(result.object.ok).toBe(true);
+                console.info(`${provider.id}: PASS; input tokens=${result.usage.inputTokens ?? "unknown"}; output tokens=${result.usage.outputTokens ?? "unknown"}`);
             },
             45_000,
         );

@@ -138,6 +138,11 @@ export function maxProviderRetries() {
     return Math.min(3, Math.floor(parsed));
 }
 
+export function maxOutputTokens() {
+    const parsed = Number(process.env["AI_MAX_OUTPUT_TOKENS"]);
+    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : 12_000;
+}
+
 export function modelEnvName(providerId: ProviderId, alias: ModelAlias) {
     return `${PROVIDER_CONFIG[providerId].modelPrefix}_${alias}`;
 }
