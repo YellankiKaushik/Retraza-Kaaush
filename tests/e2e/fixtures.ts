@@ -1,11 +1,13 @@
 import { test as base, expect } from "@playwright/test";
 import { assertRequestedDatabaseTestsAreSafe } from "../../scripts/test-environment.mjs";
+import { installPreviewAccess } from "../../scripts/preview-access.mjs";
 
 // Public regressions must not contact Supabase, even with real values in .env.
 // Individual tests may register narrower intercepted responses after this guard.
 export const test = base.extend({
     page: async ({ page }, runFixture) => {
         assertRequestedDatabaseTestsAreSafe();
+        await installPreviewAccess(page, process.env["PLAYWRIGHT_BASE_URL"]);
         const live = ["RUN_E2E_GOLDEN", "RUN_E2E_SIGNUP"].some(
             (name) => process.env[name] === "true",
         );

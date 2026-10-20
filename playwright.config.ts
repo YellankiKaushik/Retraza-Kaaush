@@ -18,7 +18,7 @@ export default defineConfig({
     reporter: "list",
     use: {
         baseURL,
-        trace: "on-first-retry",
+        trace: process.env["VERCEL_OIDC_TOKEN"] ? "off" : "on-first-retry",
     },
     projects: [
         {

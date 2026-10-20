@@ -1,5 +1,6 @@
 import { chromium } from "@playwright/test";
 import { loadEnv } from "vite";
+import { installPreviewAccess } from "./preview-access.mjs";
 
 const target = new URL(process.argv[2]);
 if (
@@ -22,6 +23,7 @@ const report = { assets: 0, secretFindings: 0, pageErrors: 0, failedResponses: 0
 const browser = await chromium.launch();
 try {
     const page = await browser.newPage();
+    await installPreviewAccess(page, target.origin);
     const pending = [];
     page.on("pageerror", () => report.pageErrors++);
     page.on("response", (response) => {

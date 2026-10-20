@@ -80,6 +80,10 @@ describe("optional live AI provider smoke", () => {
                         prompt: "Set ok to true.",
                         // Reasoning models need room for internal tokens even for tiny JSON.
                         maxOutputTokens: provider.id === "groq" ? 512 : 128,
+                        ...(provider.id === "groq" &&
+                        candidate!.modelId.startsWith("openai/gpt-oss-")
+                            ? { providerOptions: { openaiCompatible: { reasoningEffort: "low" } } }
+                            : {}),
                         maxRetries: 0,
                         abortSignal: AbortSignal.timeout(30_000),
                     });

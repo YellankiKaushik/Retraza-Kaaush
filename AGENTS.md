@@ -22,8 +22,11 @@
   explicit owner approval at the documented project-specific checkpoint.
   Never pretend this host is isolated. Preserve fail-closed guards and exact-run
   ownership checks before cleanup. Do not manufacture owner approval files.
-- No GitHub writes, pushes, PR updates, merges, workflow dispatches or deployment
-  are authorized. Local commits are allowed; inspect/disable publishing hooks.
+- No GitHub writes, pushes, PR updates, merges or workflow dispatches are authorized.
+  The October20 task authorizes only the independent retraza-kaaush Vercel
+  project, private environment setup and no-cost Preview deployment from local
+  source. No Production promotion or shared Supabase mutations are authorized.
+  Local commits are allowed; inspect/disable publishing hooks.
   The owner alone performs publishing using docs/MANUAL_GITHUB_RELEASE.md.
 - Use npm/package-lock.json for release verification. Normal tests are deterministic;
   local PostgreSQL tests use PGlite without a remote connection.
