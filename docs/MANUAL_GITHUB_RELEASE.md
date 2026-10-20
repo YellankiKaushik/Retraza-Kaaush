@@ -1,8 +1,10 @@
 # Manual GitHub Release
 
 October 19, 2026. The owner alone publishes.
-No GitHub push, PR update/comment, merge, workflow dispatch, release, tag or
-hosted deployment is authorized for the coding agent in this task.
+No GitHub push, PR update/comment, merge, workflow dispatch, release or tag
+is authorized for the coding agent. The October20 task separately authorized
+the independent Retraza project and protected Preview, now READY; no GitHub
+connection was added. Shared writes and Production promotion remain unapproved.
 Existing draft PR #1 remains unchanged by this task.
 
 ## Owner Review

@@ -7,7 +7,7 @@ server-side AI, Zod validation and deterministic dependency/progress logic.
 ## Current Verification
 
 The latest [source parity matrix](docs/FINAL_SOURCE_PARITY_MATRIX.md) records
-115 deterministic tests and 28 browser tests passing. Live shared acceptance is
+119 deterministic tests and 28 browser tests passing locally and on Preview. Live shared acceptance is
 still blocked, not passed. [Owner actions](docs/OWNER_ACTIONS_REQUIRED.md) and
 the [deployment runbook](docs/RETRAZA_DEPLOYMENT_RUNBOOK.md) consolidate the next steps.
 
@@ -20,7 +20,10 @@ Retraza verification. See [parity report](docs/VIBESPRINT_PARITY_REPORT.md),
 a second account/project is not required. Remote writes require verified catalog
 compatibility and explicit project-specific owner approval for one controlled run.
 See [shared compatibility and approval checkpoint](docs/SHARED_SUPABASE_COMPATIBILITY.md).
-**No GitHub publishing or deployment is authorized for the coding agent.**
+**No GitHub publishing, shared database writes or Production promotion is authorized.**
+The October20 task authorized the independent [Retraza Preview](https://retraza-kaaush-f6yk0unsr-kaushik-yellanki-project.vercel.app), now READY and tested with protection enabled.
+See [current completion evidence](docs/FINAL_RETRAZA_COMPLETION.md). Real hosted
+authentication/RLS/Golden Path remain blocked; the prepared demo is not live AI.
 The owner reviews and publishes manually using [the release runbook](docs/MANUAL_GITHUB_RELEASE.md).
 
 ## Install And Run

@@ -1,5 +1,45 @@
 # Retraza / ReversePath Handoff
 
+## October 20 Independent Preview Checkpoint
+
+This section supersedes earlier hosting-only blockers below. The owner authorized
+a separate no-cost Retraza project, private Preview/Production environment setup
+and LOCAL-SOURCE Preview upload, NOT GitHub writes, shared Supabase writes or
+Production promotion.
+
+Project retraza-kaaush / prj_IIXn3B3nWc8JqCvPoq6C56En7wze, active Hobby scope
+kaushik-yellanki-project. No Git connection.
+READY Preview dpl_FrVepsubsSfMfyyb1BKQPSV7iFtw:
+https://retraza-kaaush-f6yk0unsr-kaushik-yellanki-project.vercel.app
+Exact deployed commit5b2bdae702aa3ba64630bc4fd8edaf47541cfaf9. Later local report
+commits do not alter deployed app code. Branch feat/vibesprint-parity; never push.
+
+The first CLI upload was unexpectedly classified Production despite Preview
+targeting, canceled before READY, and preserved as an audit record. No READY
+Production release. See RETRAZA_VERCEL_DEPLOYMENT.md; do not hide this incident.
+
+Fresh local tests119 passed/0 failed/11 skipped (unit80/integration27/SQL12).
+Local and hosted Preview browser suites each28/0/13. Fresh Node production
+subset19/0/0. Both local builds, remote Preview build, environment, typecheck,
+lint(six old warnings), security scans and audit pass. Hosted36 fetched HTML/JS
+responses have zero secret findings/errors/failures; scoped request logs zero
+error records/5xx. Real Auth/RLS/Golden Path still BLOCKED.
+Fresh Gemini smoke passes; Groq passes focused low-reasoning retest after one400.
+Optional OpenRouter disabled; no expensive unchanged planning rerun.
+
+No Supabase users, records, migrations, cleanup or Auth settings changed.
+Catalog export absent; management access denied. All8 remote migration statuses
+UNKNOWN, not assumed pending. Public key accepted by Auth settings; REST root
+metadata requires server secret and returns401 to the publishable key.
+
+Read current reports: FINAL_RETRAZA_COMPLETION.md, RETRAZA_VERCEL_DEPLOYMENT.md,
+RETRAZA_SUPABASE_VERIFICATION.md, RETRAZA_PRODUCTION_TEST_REPORT.md.
+Exact next owner action: read-only catalog export, then comparator. Only after
+compatible evidence present the exact run/scope approval; do not manufacture it.
+No need for another Supabase project/account. Public Production requires a later,
+separate explicit approval after full live acceptance.
+Local production inspection: http://127.0.0.1:5176/demo.
+
 ## Final Production-Source Parity Checkpoint
 
 October19, 2026. Compared production application 8b46434cf02fb59b06417d3e5923e845f8af4707

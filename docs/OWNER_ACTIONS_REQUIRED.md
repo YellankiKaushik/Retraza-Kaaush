@@ -1,7 +1,7 @@
 # Owner Actions Required
 
-October 19, 2026. All safe local work completed; no GitHub writes, deployment or
-shared database mutations performed. No intermediate file/credential questions
+October 20, 2026. Local work and independent protected Preview are complete.
+No GitHub writes or shared database mutations performed. No intermediate file/credential questions
 are necessary. No second Supabase account/project is required.
 
 ## 1. Most Important: Read-Only Catalog Export
@@ -55,9 +55,12 @@ exact commands. The agent did not fabricate approval or run mutating tests.
 
 Approve exact Retraza redirect additions without replacing existing shared Site
 URL/Google/confirmation settings. Verify real mailbox receipt and complete Google
-round trip. Deploy only an independent Retraza Vercel project after owner approval;
-follow RETRAZA_DEPLOYMENT_RUNBOOK.md. No hosted Preview/Production was deployed
-or verified. These are remaining P1 external release gates, not observed code failures.
+round trip. The independent retraza-kaaush Vercel project ALREADY EXISTS; do not
+create a duplicate or connect it to stale GitHub code. Its protected Preview is
+READY and public/intercepted QA passed28/0/13. See RETRAZA_VERCEL_DEPLOYMENT.md
+for the URL, deployment ID, current source and canceled first-upload incident.
+Production is NOT released; live acceptance and explicit promotion approval
+remain required. Do not touch VibeSprint hosting or domains.
 
 ## 4. Manual Publishing
 
@@ -68,6 +71,7 @@ treat publishing code as approval for database/hosting changes. PR #1 was untouc
 
 ## Current Verdict
 
-B - FULL IMPLEMENTATION COMPLETE; OWNER APPROVAL NEEDED FOR LIVE VERIFICATION.
+C - APPLICATION CODE COMPLETE; EXTERNAL AUTH/DATABASE APPROVAL REQUIRED.
 Local deterministic/browser/SQL/build gates pass. Authenticated shared acceptance
-and hosted production parity remain BLOCKED, not PASSED.
+and Production acceptance remain BLOCKED, not PASSED. Preview public QA alone
+does not satisfy them. The single next action is still the read-only catalog export.
