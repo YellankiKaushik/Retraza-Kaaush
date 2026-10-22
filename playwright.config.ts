@@ -14,6 +14,8 @@ export default defineConfig({
     timeout: 30_000,
     expect: { timeout: 10_000 },
     fullyParallel: false,
+    // One shared Vite server must finish client dependency optimization between files.
+    workers: 1,
     retries: process.env["CI"] ? 1 : 0,
     reporter: "list",
     use: {

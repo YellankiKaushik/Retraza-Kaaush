@@ -34,7 +34,12 @@ export const test = base.extend({
                     }),
             );
         }
-        await runFixture(page);
+        try {
+            await runFixture(page);
+        } finally {
+            // Finish protected-Preview proxies before Playwright closes their request context.
+            await page.unrouteAll({ behavior: "wait" });
+        }
     },
 });
 export { expect };

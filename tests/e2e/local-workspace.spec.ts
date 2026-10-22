@@ -370,3 +370,48 @@ test("export failure never emits a download or success toast", async ({ page }) 
     expect(downloads).toBe(0);
     await expect(page.getByRole("button", { name: "Export my data" })).toBeEnabled();
 });
+
+for (const message of [
+    "AI could not produce a valid plan: a configured provider is rate limited. Your accepted plan and progress are unchanged.",
+    "Candidate transaction failed. Your accepted plan and progress are unchanged.",
+]) {
+    test(`replan error preserves accepted progress without a false success: ${message.split(".")[0]}`, async ({
+        page,
+    }, info) => {
+        await session(page);
+        const data = await plannedBundle();
+        data.plan.nodes.find((node) => node.node_type === "ACTION")!.status = "DONE";
+        let writes = 0;
+        await page.route("**/_serverFn/**", (route) => {
+            const post = route.request().method() === "POST";
+            if (post) writes++;
+            return route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify(
+                    post ? { error: { message }, context: {} } : { result: data, context: {} },
+                ),
+            });
+        });
+        await page.goto(`/plans/${caseId}`);
+        await expect(page.getByText(/% · 1\//)).toBeVisible();
+        await page.getByRole("button", { name: "Propose a revised plan", exact: true }).click();
+        await expect(page.getByText(message, { exact: true })).toBeVisible();
+        await expect(
+            page.getByText("A revised version is ready to review.", { exact: true }),
+        ).toHaveCount(0);
+        await expect(
+            page.getByRole("button", { name: "Accept candidate", exact: true }),
+        ).toHaveCount(0);
+        await expect(page.getByText(/% · 1\//)).toBeVisible();
+        await expect(
+            page.getByRole("button", { name: "Propose a revised plan", exact: true }),
+        ).toBeEnabled();
+        expect(writes).toBe(1);
+        await page.screenshot({ path: info.outputPath("replan-failure.png"), fullPage: true });
+        await page.reload();
+        await expect(page.getByText(/% · 1\//)).toBeVisible();
+        expect(data.plan.versions).toHaveLength(1);
+        expect(data.plan.activeVersionId).toBe("v1");
+    });
+}

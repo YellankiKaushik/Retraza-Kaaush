@@ -36,6 +36,7 @@ test("prepared demo unlocks tasks and persists completion after refresh", async 
     await page.getByRole("button", { name: "Reset demo" }).click();
     await page.reload();
     await expect(page.getByRole("button", { name: "Load prepared plan" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Load prepared plan" })).toBeEnabled();
     expect(errors).toEqual([]);
 });
 
