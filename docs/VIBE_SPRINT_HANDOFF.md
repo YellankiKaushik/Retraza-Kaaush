@@ -1,5 +1,54 @@
 # Retraza / ReversePath Handoff
 
+## LATEST - One AtlasCloud Dots Request FAILED, No Retry
+
+Owner authorized exactly ONE isolated request for
+dots-studio/dots-3-note-preview:free on AtlasCloud only,8000 output tokens,$0,
+no retries/fallback/Supabase/users. Run8616d0bd-6e24-49b8-b68a-1ea8cb6d21d9
+is CONSUMED;never reuse its lock or rerun without fresh explicit authorization.
+Completed2026-10-22T20:01:58Z (October23 01:31:58IST).
+Fresh official metadata verified auth/account quota,healthy zero-price endpoint,
+supported parameters and exact AtlasCloud routing tag atlas-cloud/fp8.
+Actual outgoing request enforced provider.only=[atlas-cloud/fp8],no fallbacks,
+require_parameters=true,max_price prompt/completion0,max_tokens8000,SDK retries0.
+No raw prompts,responses or credentials retained.
+
+Actual result:HTTP200,served provider AtlasCloud,one assistant choice,
+11940 content characters,complete JSON,finish_reason=stop.
+Input934/output5997/reasoning3185 tokens;no error envelope,no timeout.
+SDK semantic schema validation PASSED. Semantic compilation FAILED:
+AI_GRAPH_INVALID,validationFailure=dangling-edge,graphValid=false.
+An unresolved semantic reference was rejected before persistence. Safe evidence
+cannot distinguish prerequisite index versus bottleneck reference;do not invent
+a more specific cause or claim an application compiler defect. This is NOT an
+authentication,quota or payment failure,and HTTP200 is not usable-plan success.
+Both-strategy/action/assumption/compiled-graph success NOT established.
+One request/attempt,zero retries/users/Supabase calls/database writes.
+Report:logs/openrouter-plan-8616d0bd-6e24-49b8-b68a-1ea8cb6d21d9.json.
+
+Minimal LOCAL changes add optional server-only OPENROUTER_PROVIDER_ONLY pin,
+bind the isolated harness to the exact owner-authorized Dots/AtlasCloud scope,
+and test the outgoing provider restriction using mocked full semantic output.
+10 focused offline tests PASS;typecheck/lint/secret scan PASS. No full-suite
+repetition. Providers remain DISABLED in ignored .env;no activation or env upload.
+No deployment,alias/protection change,shared acceptance,Auth/schema/migration
+change,GitHub push/PR/main merge,Production or VibeSprint modification.
+Existing Ready Preview dpl_Dh6JQKQVc5e5fCdsQhseo34uHsdP remains intact:
+https://retraza-kaaush-preview-kaushik-yellanki-project.vercel.app
+Published GitHub commit remains985410533d5e27366d08f79758110272cbb0100b.
+Diagnostic source changes are LOCAL ONLY;do not present them as deployed.
+No provider activation proof was generated;essential hosted acceptance and
+Production remain BLOCKED until one genuine validated provider plan and separate
+owner-authored shared approval. Google remains OWNER-VERIFIED PASS.
+
+Most practical owner alternative:in Google AI Studio > Dashboard > API Keys,
+inspect the existing supplied Gemini key's full copy,active/blocked status,
+Gemini API restriction and service-account/project binding;correct the ignored
+GEMINI_API_KEY only if mismatched. Native SDK/header/loading checks already pass;
+official metadata still401 ACCESS_TOKEN_TYPE_UNSUPPORTED. Actual credential
+provisioning cause UNKNOWN;do not blindly rotate,change permissions or billing.
+No further provider inference is authorized by this consumed run.
+
 ## FINAL - October23 Verified Preview And Local Publication
 
 Release choice B:features and legitimate local commits ready;external live-AI

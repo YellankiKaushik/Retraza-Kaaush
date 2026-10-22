@@ -202,6 +202,9 @@ async function callModel<S extends z.ZodType>(args: {
                                       openrouter: {
                                           strictJsonSchema: true,
                                           provider: {
+                                              ...(process.env["OPENROUTER_PROVIDER_ONLY"]
+                                                  ? { only: [process.env["OPENROUTER_PROVIDER_ONLY"]] }
+                                                  : {}),
                                               allow_fallbacks: false,
                                               require_parameters: true,
                                               max_price: { prompt: 0, completion: 0 },

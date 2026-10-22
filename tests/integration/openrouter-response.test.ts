@@ -25,6 +25,7 @@ beforeEach(() => {
         OPENROUTER_ENABLED: "true",
         OPENROUTER_API_KEY: "fictional-private-key",
         OPENROUTER_MODEL_PRIMARY: "fictional:free",
+        OPENROUTER_PROVIDER_ONLY: "",
         GROQ_ENABLED: "false",
         GEMINI_ENABLED: "false",
         AI_PROVIDER_MAX_RETRIES: "0",
@@ -86,6 +87,19 @@ it("distinguishes HTTP success, complete JSON, validated semantic plan and compi
     });
     expect(fetch).toHaveBeenCalledOnce();
     expect(JSON.stringify(vi.mocked(console.info).mock.calls)).not.toContain(secret);
+});
+it("restricts an explicitly pinned provider without permitting fallback or paid routing", async () => {
+    vi.stubEnv("OPENROUTER_PROVIDER_ONLY", "atlas-cloud/fp8");
+    const fetch = transport(response(JSON.stringify(semanticPlan())));
+    await runPlanGeneration(input);
+    const call = fetch.mock.calls[0] as unknown as [unknown, RequestInit];
+    expect(JSON.parse(String(call[1].body)).provider).toEqual({
+        only: ["atlas-cloud/fp8"],
+        allow_fallbacks: false,
+        require_parameters: true,
+        max_price: { prompt: 0, completion: 0 },
+    });
+    expect(fetch).toHaveBeenCalledOnce();
 });
 for (const [content, finishReason] of [
     [null, "length"],

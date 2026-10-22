@@ -23,7 +23,7 @@ it.skipIf(process.env["RUN_OPENROUTER_PLAN_SMOKE"] !== "true")(
             existsSync(`logs/openrouter-plan-${runId}.json`)
         )
             throw new Error("This isolated request UUID is already consumed");
-        if (model !== "xingchen-agi/xing4.0-29b-a4b:free")
+        if (model !== "dots-studio/dots-3-note-preview:free")
             throw new Error("Only the approved zero-price free model is permitted");
         const originalFetch = globalThis.fetch;
         const metadataHeaders = { Authorization: "Bearer " + process.env["OPENROUTER_API_KEY"] };
@@ -61,6 +61,8 @@ it.skipIf(process.env["RUN_OPENROUTER_PLAN_SMOKE"] !== "true")(
                 (m: {
                     id: string;
                     endpoints: {
+                        tag: string;
+                        provider_name: string;
                         status: number;
                         pricing: { prompt: string; completion: string };
                         supported_parameters: string[];
@@ -69,6 +71,8 @@ it.skipIf(process.env["RUN_OPENROUTER_PLAN_SMOKE"] !== "true")(
                     m.id === model &&
                     m.endpoints.some(
                         (e) =>
+                            e.tag === "atlas-cloud/fp8" &&
+                            e.provider_name === "AtlasCloud" &&
                             e.status === 0 &&
                             Number(e.pricing.prompt) === 0 &&
                             Number(e.pricing.completion) === 0 &&
@@ -93,6 +97,7 @@ it.skipIf(process.env["RUN_OPENROUTER_PLAN_SMOKE"] !== "true")(
             if (++requests > 1) throw new Error("Single request authorization consumed");
             const body = JSON.parse(String(init.body));
             expect(body.model).toBe(model);
+            expect(body.provider.only).toEqual(["atlas-cloud/fp8"]);
             expect(body.provider.max_price).toEqual({ prompt: 0, completion: 0 });
             expect(body.provider.allow_fallbacks).toBe(false);
             expect(body.provider.require_parameters).toBe(true);
@@ -103,10 +108,14 @@ it.skipIf(process.env["RUN_OPENROUTER_PLAN_SMOKE"] !== "true")(
             expect(
                 endpoint.data.endpoints.some(
                     (e: {
+                        tag: string;
+                        provider_name: string;
                         status: number;
                         pricing: { prompt: string; completion: string };
                         supported_parameters: string[];
                     }) =>
+                        e.tag === "atlas-cloud/fp8" &&
+                        e.provider_name === "AtlasCloud" &&
                         e.status === 0 &&
                         Number(e.pricing.prompt) === 0 &&
                         Number(e.pricing.completion) === 0 &&
@@ -124,6 +133,7 @@ it.skipIf(process.env["RUN_OPENROUTER_PLAN_SMOKE"] !== "true")(
         vi.stubEnv("AI_PROVIDER_ALLOWLIST", "openrouter");
         vi.stubEnv("AI_ROUTE_PRIMARY", "openrouter");
         vi.stubEnv("OPENROUTER_ENABLED", "true");
+        vi.stubEnv("OPENROUTER_PROVIDER_ONLY", "atlas-cloud/fp8");
         vi.stubEnv("GROQ_ENABLED", "false");
         vi.stubEnv("GEMINI_ENABLED", "false");
         vi.stubEnv("AI_PROVIDER_MAX_RETRIES", "0");
