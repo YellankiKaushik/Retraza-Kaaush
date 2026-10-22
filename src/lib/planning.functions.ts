@@ -190,8 +190,14 @@ export const replan = createServerFn({ method: "POST" })
         const { supabase, userId } = context;
         const { runReplan, runChangeExplanation } = await import("@/ai/orchestrator.server");
         const { PROMPT_VERSION } = await import("@/ai/plan-contract");
-        const { persistProposal, nextVersionNumber, snapshotText, diffPlanNodes, DomainError } =
-            await import("@/lib/planner.server");
+        const {
+            persistProposal,
+            nextVersionNumber,
+            snapshotText,
+            diffPlanNodes,
+            buildReplanContext,
+            DomainError,
+        } = await import("@/lib/planner.server");
         const telemetry = await import("@/lib/telemetry.server");
 
         const claim = await telemetry.claimIdempotencyKey(userId, "REPLAN", data.idempotencyKey);
@@ -221,20 +227,38 @@ export const replan = createServerFn({ method: "POST" })
             const planRow = plan.data;
             const activeVersionId = planRow.active_version_id as string;
 
-            const [caseRow, activeVersion, nodes, edges] = await Promise.all([
+            const [caseRow, activeVersion, nodes, edges, strategies, actions] = await Promise.all([
                 supabase.from("intake_cases").select("*").eq("id", planRow.case_id).single(),
                 supabase.from("plan_versions").select("*").eq("id", activeVersionId).single(),
                 supabase.from("plan_nodes").select("*").eq("plan_version_id", activeVersionId),
                 supabase.from("plan_edges").select("*").eq("plan_version_id", activeVersionId),
+                supabase.from("strategies").select("*").eq("plan_version_id", activeVersionId),
+                supabase
+                    .from("actions")
+                    .select("*, plan_nodes!inner(plan_version_id)")
+                    .eq("plan_nodes.plan_version_id", activeVersionId),
             ]);
             if (
-                [caseRow, activeVersion, nodes, edges].some((result) => result.error) ||
+                [caseRow, activeVersion, nodes, edges, strategies, actions].some(
+                    (result) => result.error,
+                ) ||
                 !caseRow.data ||
                 !activeVersion.data
             )
                 throw new Error(
                     "The current plan and context could not be loaded. Please try again.",
                 );
+
+            const continuity = buildReplanContext({
+                planId: data.planId,
+                userId,
+                versionId: activeVersionId,
+                version: activeVersion.data,
+                nodes: nodes.data ?? [],
+                edges: edges.data ?? [],
+                strategies: strategies.data ?? [],
+                actions: actions.data ?? [],
+            });
 
             if (data.changedFacts.length > 0) {
                 const changed = await supabase.from("case_context_facts").insert(
@@ -283,6 +307,7 @@ export const replan = createServerFn({ method: "POST" })
                 })),
                 scenario: activeVersion.data?.scenario ?? "BALANCED",
                 previous: before,
+                continuity,
                 reason: data.reason,
                 note: data.note,
                 correlationId,
@@ -303,6 +328,7 @@ export const replan = createServerFn({ method: "POST" })
                 generationSource: { provider: meta.provider, model: meta.providerModel },
                 promptVersion: PROMPT_VERSION,
                 activate: false,
+                continuity,
             });
             candidateCommitted = true;
 

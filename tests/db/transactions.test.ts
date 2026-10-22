@@ -5,7 +5,10 @@ import { beforeAll, afterAll, describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { mockPlanProposal } from "@/ai/mock-provider.server";
-import { persistProposal } from "@/lib/planner.server";
+import { buildReplanContext, persistProposal } from "@/lib/planner.server";
+import { compactPlan } from "../helpers/compact-plan";
+import { compileSemanticPlan } from "@/ai/semantic-plan.server";
+import { semanticPlan } from "../helpers/semantic-plan";
 
 // Real PostgreSQL in WASM; never reads .env or opens a remote connection.
 describe("isolated PostgreSQL migrations, transactions and ownership", () => {
@@ -78,9 +81,11 @@ describe("isolated PostgreSQL migrations, transactions and ownership", () => {
             },
         } as unknown as SupabaseClient<Database>;
     }
-    async function graph(activate = true) {
+    async function graph(
+        activate = true,
+        proposal = mockPlanProposal({ rawText: "Build a portfolio in six months" }),
+    ) {
         const ids = await newPlan();
-        const proposal = mockPlanProposal({ rawText: "Build a portfolio in six months" });
         const args = {
             ...ids,
             supabase: client(),
@@ -95,6 +100,43 @@ describe("isolated PostgreSQL migrations, transactions and ownership", () => {
         };
         return { ...ids, args, ...(await persistProposal(args)) };
     }
+
+    it("persists a complete live-profile graph with HIGH assumption links to executable nodes", async () => {
+        const ids = await newPlan();
+        const proposal = compactPlan();
+        proposal.assumptions[0]!.importance = "HIGH";
+        proposal.assumptions[0]!.validationNodeTempId = "action-baseline";
+        const saved = await persistProposal({
+            ...ids,
+            supabase: client(),
+            userId: owner,
+            proposal,
+            scenario: "BALANCED",
+            parentVersionId: null,
+            versionNumber: 1,
+            modelAlias: "PRIMARY",
+            generationSource: { provider: "groq", model: "offline-fixture" },
+            promptVersion: "v4-assumption-validators",
+            activate: true,
+        });
+        const links = await query(
+            "SELECT a.importance,n.node_type,n.metadata->>'tempId' AS temp_id FROM public.assumptions a JOIN public.plan_nodes n ON n.id=a.validation_action_node_id WHERE a.plan_version_id=$1 AND a.importance='HIGH'",
+            [saved.versionId],
+        );
+        expect(links).toEqual([
+            { importance: "HIGH", node_type: "ACTION", temp_id: "action-baseline" },
+        ]);
+        expect(
+            await query("SELECT id FROM public.assumptions WHERE plan_version_id=$1", [
+                saved.versionId,
+            ]),
+        ).toHaveLength(3);
+        expect(
+            await query("SELECT id FROM public.strategies WHERE plan_version_id=$1", [
+                saved.versionId,
+            ]),
+        ).toHaveLength(2);
+    });
 
     it("applies all eight migrations with RLS, primary keys, foreign keys and indexes", async () => {
         const tables = await query(
@@ -366,5 +408,197 @@ describe("isolated PostgreSQL migrations, transactions and ownership", () => {
         expect(
             await query("SELECT id FROM public.plan_versions WHERE plan_id=$1", [result.planId]),
         ).toHaveLength(2);
+    });
+
+    async function completedReplan(proposal?: Parameters<typeof graph>[1]) {
+        const result = await graph(true, proposal);
+        const completedTempId =
+            proposal?.nodes.find((n) => n.nodeType === "ACTION")?.tempId ?? "action-baseline";
+        const [first] = await query(
+            "SELECT id FROM public.plan_nodes WHERE plan_version_id=$1 AND metadata->>'tempId'=$2",
+            [result.versionId, completedTempId],
+        );
+        await query("SELECT public.update_execution_node($1,$2)", [
+            first!.id,
+            { status: "DONE", note: "Accepted completion evidence" },
+        ]);
+        const [version] = await query("SELECT * FROM public.plan_versions WHERE id=$1", [
+            result.versionId,
+        ]);
+        const rows: Record<string, unknown[]> = {};
+        for (const table of ["plan_nodes", "plan_edges", "strategies"])
+            rows[table] = await query(`SELECT * FROM public.${table} WHERE plan_version_id=$1`, [
+                result.versionId,
+            ]);
+        const actions = await query(
+            "SELECT a.* FROM public.actions a JOIN public.plan_nodes n ON n.id=a.plan_node_id WHERE n.plan_version_id=$1",
+            [result.versionId],
+        );
+        const continuity = buildReplanContext({
+            planId: result.planId,
+            userId: owner,
+            versionId: result.versionId,
+            version,
+            nodes: rows["plan_nodes"],
+            edges: rows["plan_edges"],
+            strategies: rows["strategies"],
+            actions,
+        } as Parameters<typeof buildReplanContext>[0]);
+        return {
+            result,
+            continuity,
+            original: await query("SELECT status,metadata FROM public.plan_nodes WHERE id=$1", [
+                first!.id,
+            ]),
+            evidence: await query(
+                "SELECT completed_at,result FROM public.actions WHERE plan_node_id=$1",
+                [first!.id],
+            ),
+        };
+    }
+
+    it("compiles semantic replans then atomically preserves evidence through rejection and acceptance", async () => {
+        const s = semanticPlan();
+        const { result, continuity, evidence } = await completedReplan(compileSemanticPlan(s));
+        const completed = continuity.nodes.find((n) => n.status === "DONE")!;
+        s.strategies[0]!.milestones[0]!.work[0]!.content = {
+            source: "accepted",
+            tempId: completed.tempId,
+        };
+        const proposal = compileSemanticPlan(s, continuity);
+        const save = () =>
+            persistProposal({
+                ...result.args,
+                proposal,
+                continuity,
+                parentVersionId: result.versionId,
+                activate: false,
+                generationSource: { provider: "groq", model: "offline" },
+            });
+        const rejected = await save();
+        await query("UPDATE public.plan_versions SET state='REJECTED' WHERE id=$1", [
+            rejected.versionId,
+        ]);
+        await expect(
+            query("SELECT public.activate_plan_version_for_user($1,$2)", [
+                result.planId,
+                rejected.versionId,
+            ]),
+        ).rejects.toThrow();
+        const candidate = await save();
+        const read = () =>
+            query(
+                "SELECT a.completed_at,a.result FROM public.actions a JOIN public.plan_nodes n ON n.id=a.plan_node_id WHERE n.plan_version_id=$1 AND n.metadata->>'tempId'=$2",
+                [candidate.versionId, completed.tempId],
+            );
+        expect(await read()).toEqual(evidence);
+        await query("SELECT public.activate_plan_version_for_user($1,$2)", [
+            result.planId,
+            candidate.versionId,
+        ]);
+        expect(await read()).toEqual(evidence);
+        expect(
+            await query("SELECT id FROM public.plan_versions WHERE plan_id=$1 AND state='ACTIVE'", [
+                result.planId,
+            ]),
+        ).toEqual([{ id: candidate.versionId }]);
+        expect(
+            (
+                await query("SELECT state FROM public.plan_versions WHERE id=$1", [
+                    result.versionId,
+                ])
+            )[0]!.state,
+        ).toBe("SUPERSEDED");
+    });
+
+    it("preserves real PostgreSQL completion evidence through candidate save, activation and reload", async () => {
+        const { result, continuity, evidence } = await completedReplan();
+        const candidate = await persistProposal({
+            ...result.args,
+            parentVersionId: result.versionId,
+            activate: false,
+            continuity,
+        });
+        expect(
+            (
+                await query("SELECT active_version_id FROM public.plans WHERE id=$1", [
+                    result.planId,
+                ])
+            )[0]!.active_version_id,
+        ).toBe(result.versionId);
+        const readEvidence = () =>
+            query(
+                "SELECT a.completed_at,a.result FROM public.actions a JOIN public.plan_nodes n ON n.id=a.plan_node_id WHERE n.plan_version_id=$1 AND n.metadata->>'tempId'='action-baseline'",
+                [candidate.versionId],
+            );
+        expect(await readEvidence()).toEqual(evidence);
+        await query("SELECT public.activate_plan_version_for_user($1,$2)", [
+            result.planId,
+            candidate.versionId,
+        ]);
+        expect(await readEvidence()).toEqual(evidence);
+        expect(
+            (
+                await query(
+                    "SELECT status FROM public.plan_nodes WHERE plan_version_id=$1 AND metadata->>'tempId'='action-baseline'",
+                    [candidate.versionId],
+                )
+            )[0]!.status,
+        ).toBe("DONE");
+        expect(
+            (
+                await query("SELECT state FROM public.plan_versions WHERE id=$1", [
+                    result.versionId,
+                ])
+            )[0]!.state,
+        ).toBe("SUPERSEDED");
+        expect(
+            await query("SELECT id FROM public.plan_versions WHERE plan_id=$1 AND state='ACTIVE'", [
+                result.planId,
+            ]),
+        ).toHaveLength(1);
+    });
+
+    it("rolls back a failed candidate transaction and recovers without losing accepted progress", async () => {
+        const { result, continuity, original, evidence } = await completedReplan();
+        const proposal = structuredClone(result.args.proposal);
+        // Force an actual SQL NOT NULL violation after version and node inserts.
+        proposal.risks[0]!.mitigation = null as unknown as string;
+        await expect(
+            persistProposal({
+                ...result.args,
+                proposal,
+                parentVersionId: result.versionId,
+                activate: false,
+                continuity,
+            }),
+        ).rejects.toThrow();
+        expect(
+            await query("SELECT id FROM public.plan_versions WHERE plan_id=$1", [result.planId]),
+        ).toHaveLength(1);
+        expect(
+            (
+                await query("SELECT active_version_id FROM public.plans WHERE id=$1", [
+                    result.planId,
+                ])
+            )[0]!.active_version_id,
+        ).toBe(result.versionId);
+        const [node] = await query(
+            "SELECT id,status,metadata FROM public.plan_nodes WHERE plan_version_id=$1 AND metadata->>'tempId'='action-baseline'",
+            [result.versionId],
+        );
+        expect({ status: node!.status, metadata: node!.metadata }).toEqual(original[0]);
+        expect(
+            await query("SELECT completed_at,result FROM public.actions WHERE plan_node_id=$1", [
+                node!.id,
+            ]),
+        ).toEqual(evidence);
+        const candidate = await persistProposal({
+            ...result.args,
+            parentVersionId: result.versionId,
+            activate: false,
+            continuity,
+        });
+        expect(candidate.versionNumber).toBe(2);
     });
 });

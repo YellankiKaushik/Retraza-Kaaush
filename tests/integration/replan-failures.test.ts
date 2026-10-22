@@ -65,8 +65,40 @@ function query(table: string) {
                 : table === "intake_cases"
                   ? { raw_text: "Goal", success_criteria: [] }
                   : table === "plan_versions"
-                    ? { summary: "Old", scenario: "BALANCED" }
-                    : [];
+                    ? {
+                          id: "active",
+                          plan_id: "plan",
+                          user_id: "owner",
+                          state: "ACTIVE",
+                          parent_version_id: null,
+                          summary: "Old",
+                          scenario: "BALANCED",
+                      }
+                    : table === "plan_nodes"
+                      ? [
+                            {
+                                id: "objective",
+                                plan_version_id: "active",
+                                user_id: "owner",
+                                node_type: "OBJECTIVE",
+                                title: "Goal",
+                                description: "Goal",
+                                status: "PENDING",
+                                strategy_id: null,
+                                metadata: { tempId: "objective" },
+                            },
+                        ]
+                      : table === "strategies"
+                        ? [
+                              {
+                                  id: "balanced",
+                                  user_id: "owner",
+                                  plan_version_id: "active",
+                                  name: "Balanced path",
+                                  selected: true,
+                              },
+                          ]
+                        : [];
         return { data, error };
     };
     const builder = {
@@ -124,4 +156,24 @@ it("does not report success or release the claim when the change diff cannot be 
 it("returns the transaction-allocated version number after concurrent allocation", async () => {
     mocks.persist.mockResolvedValue({ versionId: "candidate", versionNumber: 3 });
     await expect(invoke()).resolves.toMatchObject({ versionNumber: 3 });
+});
+it("reports a failed candidate transaction without success or activation", async () => {
+    mocks.persist.mockRejectedValue(new Error("Candidate transaction failed"));
+    await expect(invoke()).rejects.toThrow("Candidate transaction failed");
+    expect(mocks.complete).not.toHaveBeenCalled();
+    expect(mocks.release).toHaveBeenCalledOnce();
+    expect(mocks.persist).toHaveBeenCalledWith(
+        expect.objectContaining({
+            activate: false,
+            parentVersionId: "active",
+            continuity: expect.objectContaining({ versionId: "active" }),
+        }),
+    );
+});
+it("does not persist or report success when every provider fails", async () => {
+    mocks.generate.mockRejectedValue(new Error("AI is rate limited; accepted progress unchanged"));
+    await expect(invoke()).rejects.toThrow(/rate limited/);
+    expect(mocks.persist).not.toHaveBeenCalled();
+    expect(mocks.complete).not.toHaveBeenCalled();
+    expect(mocks.release).toHaveBeenCalledOnce();
 });
