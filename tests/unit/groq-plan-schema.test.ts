@@ -19,6 +19,7 @@ it("flattens nullable union branches while preserving strict runtime validation"
     );
     expect(nested.length).toBeGreaterThan(0);
     const wire = await groqPlanningOutputSchema.jsonSchema;
+    expect(JSON.stringify(wire)).not.toMatch(/prerequisiteIndexes|workIndex|strategyIndex/);
     for (const branch of unionBranches(wire)) {
         expect(branch).not.toHaveProperty("anyOf");
         expect(branch).toHaveProperty("type");

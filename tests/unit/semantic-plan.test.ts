@@ -1,11 +1,154 @@
 import { describe, expect, it } from "vitest";
 import { compileSemanticPlan, semanticPlanSchema } from "@/ai/semantic-plan.server";
 import { validateProposal } from "@/lib/planner.server";
-import { semanticPlan } from "../helpers/semantic-plan";
+import { semanticPlan, legacySemanticPlan } from "../helpers/semantic-plan";
 import { replanContext } from "../helpers/replan-context";
 import { compactPlan } from "../helpers/compact-plan";
 
 describe("deterministic semantic graph compiler", () => {
+    it("compiles previously valid indexed output identically to the named contract", () => {
+        const old = legacySemanticPlan();
+        const before = structuredClone(old);
+        expect(compileSemanticPlan(old)).toEqual(compileSemanticPlan(semanticPlan()));
+        expect(old).toEqual(before);
+    });
+    it("preserves explicit multi-milestone and multiple prerequisites without chaining independent work", () => {
+        const s = semanticPlan();
+        const p = compileSemanticPlan(s);
+        const byTitle = (title: string) => p.nodes.find((n) => n.title === title)!.tempId;
+        const first = byTitle("Measure weekly study capacity");
+        const independent = byTitle("Compare three PM role descriptions");
+        const study = byTitle("Write one product case study");
+        const review = byTitle("Ask two PMs to review the study");
+        const hard = p.edges.filter((e) => e.hardDependency);
+        expect(hard).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ from: first, to: study }),
+                expect.objectContaining({ from: independent, to: study }),
+                expect.objectContaining({ from: study, to: review }),
+            ]),
+        );
+        expect(hard.some((e) => e.to === first || e.to === independent)).toBe(false);
+    });
+    for (const target of [6, 99])
+        it("reports the exact legacy prerequisite path and out-of-range target " + target, () => {
+            const s = legacySemanticPlan();
+            s.strategies[0]!.milestones[1]!.work[0]!.prerequisiteIndexes = [target];
+            expect(() => compileSemanticPlan(s)).toThrowError(
+                expect.objectContaining({
+                    validationRule: "dangling-edge",
+                    referenceTargetIndex: target,
+                    issues: [
+                        {
+                            code: "custom",
+                            path: [
+                                "strategies",
+                                0,
+                                "milestones",
+                                1,
+                                "work",
+                                0,
+                                "prerequisiteIndexes",
+                                0,
+                            ],
+                        },
+                    ],
+                }),
+            );
+        });
+    for (const [strategyIndex, workIndex, field] of [
+        [0, 99, "workIndex"],
+        [9, 0, "strategyIndex"],
+    ] as const)
+        it("reports the exact legacy bottleneck " + field, () => {
+            const s = legacySemanticPlan();
+            s.bottleneck = { strategyIndex, workIndex };
+            expect(() => compileSemanticPlan(s)).toThrowError(
+                expect.objectContaining({
+                    referenceTargetIndex: field === "strategyIndex" ? strategyIndex : workIndex,
+                    issues: [{ code: "custom", path: ["bottleneck", field] }],
+                }),
+            );
+        });
+    for (const workKey of ["absent", "interview", "capacity", "review"])
+        it(
+            "rejects undeclared, foreign, self or future dependency " +
+                workKey +
+                " at its exact path",
+            () => {
+                const s = semanticPlan();
+                s.strategies[0]!.milestones[0]!.work[0]!.dependency = {
+                    kind: "AFTER",
+                    workKeys: [workKey],
+                };
+                const before = structuredClone(s);
+                expect(() => compileSemanticPlan(s)).toThrowError(
+                    expect.objectContaining({
+                        issues: [
+                            {
+                                code: "custom",
+                                path: [
+                                    "strategies",
+                                    0,
+                                    "milestones",
+                                    0,
+                                    "work",
+                                    0,
+                                    "dependency",
+                                    "workKeys",
+                                    0,
+                                ],
+                            },
+                        ],
+                    }),
+                );
+                expect(s).toEqual(before);
+            },
+        );
+    it("rejects foreign strategy bottleneck and HIGH validators without borrowing another strategy's work", () => {
+        const s = semanticPlan();
+        s.bottleneck = { strategy: "SECOND", workKey: "capacity" };
+        expect(() => compileSemanticPlan(s)).toThrowError(
+            expect.objectContaining({
+                issues: [{ code: "custom", path: ["bottleneck", "workKey"] }],
+            }),
+        );
+        s.bottleneck = null;
+        s.assumptions.first.validator.workKey = "interview";
+        expect(() => compileSemanticPlan(s)).toThrowError(
+            expect.objectContaining({
+                validationRule: "assumption-validator",
+                issues: [
+                    { code: "custom", path: ["assumptions", "first", "validator", "workKey"] },
+                ],
+            }),
+        );
+    });
+    it("rejects extra dependencies on independent work rather than silently dropping them", () => {
+        const s = semanticPlan();
+        Object.assign(s.strategies[0]!.milestones[0]!.work[0]!.dependency, {
+            workKeys: ["capacity"],
+        });
+        expect(semanticPlanSchema.safeParse(s).success).toBe(false);
+        expect(() => compileSemanticPlan(s)).toThrow();
+    });
+    it("retains legacy acyclic forward references but rejects legacy self references and cycles", () => {
+        const s = legacySemanticPlan();
+        s.strategies[0]!.milestones[0]!.work[0]!.prerequisiteIndexes = [1];
+        expect(() => compileSemanticPlan(s)).not.toThrow();
+        s.strategies[0]!.milestones[0]!.work[0]!.prerequisiteIndexes = [0];
+        expect(() => compileSemanticPlan(s)).toThrowError(
+            expect.objectContaining({
+                validationRule: "dependency-cycle",
+                referenceTargetIndex: 0,
+            }),
+        );
+        s.strategies[0]!.milestones[0]!.work[0]!.prerequisiteIndexes = [1];
+        s.strategies[0]!.milestones[0]!.work[1]!.prerequisiteIndexes = [0];
+        expect(() => compileSemanticPlan(s)).toThrowError(
+            expect.objectContaining({ validationRule: "dependency-cycle" }),
+        );
+    });
     for (const count of [2, 3, 4, 5, 6])
         it(
             "enforces single-collection assumption cardinality " + count + " without padding",
@@ -116,12 +259,13 @@ describe("deterministic semantic graph compiler", () => {
         s.assumptions.third.statement = s.assumptions.second.statement;
         expect(() => compileSemanticPlan(s)).toThrow(/distinct/i);
         s.assumptions.third.statement = "An internal product team exists.";
-        s.assumptions.first.validator.workIndex = 99;
+        s.assumptions.first.validator.workKey = "absent";
         expect(() => compileSemanticPlan(s)).toThrow(/owning strategy/i);
     });
     it("resolves a validator only inside its declared owning strategy", () => {
         const s = semanticPlan();
         s.assumptions.first.strategy = "SECOND";
+        s.assumptions.first.validator.workKey = "interview";
         const p = compileSemanticPlan(s);
         expect(
             p.nodes.find((n) => n.tempId === p.assumptions[0]!.validationNodeTempId)?.strategyKey,
@@ -133,7 +277,7 @@ describe("deterministic semantic graph compiler", () => {
                     ...s.assumptions,
                     first: {
                         ...s.assumptions.first,
-                        validator: { workIndex: 0, strategy: "FIRST" },
+                        validator: { workKey: "capacity", strategy: "FIRST" },
                     },
                 },
             }).success,
@@ -170,14 +314,23 @@ describe("deterministic semantic graph compiler", () => {
         [
             "dangling prerequisite",
             (s: ReturnType<typeof semanticPlan>) => {
-                s.strategies[0]!.milestones[0]!.work[0]!.prerequisiteIndexes = [99];
+                s.strategies[0]!.milestones[0]!.work[0]!.dependency = {
+                    kind: "AFTER",
+                    workKeys: ["absent"],
+                };
             },
         ],
         [
             "cycle",
             (s: ReturnType<typeof semanticPlan>) => {
-                s.strategies[0]!.milestones[0]!.work[0]!.prerequisiteIndexes = [1];
-                s.strategies[0]!.milestones[0]!.work[1]!.prerequisiteIndexes = [0];
+                s.strategies[0]!.milestones[0]!.work[0]!.dependency = {
+                    kind: "AFTER",
+                    workKeys: ["roles"],
+                };
+                s.strategies[0]!.milestones[0]!.work[1]!.dependency = {
+                    kind: "AFTER",
+                    workKeys: ["capacity"],
+                };
             },
         ],
         [

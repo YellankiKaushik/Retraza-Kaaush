@@ -296,7 +296,7 @@ it("does not call persistence or report success for a missing semantic branch", 
 });
 it("rejects nonexistent dependencies before the actual handler's persistence boundary", async () => {
     const s = semanticPlan();
-    s.strategies[0]!.milestones[0]!.work[0]!.prerequisiteIndexes = [99];
+    s.strategies[0]!.milestones[0]!.work[0]!.dependency = { kind: "AFTER", workKeys: ["absent"] };
     const fetch = sdk(s);
     const { invoke, rpc } = handler();
     await expect(invoke()).rejects.toThrow();
@@ -390,7 +390,7 @@ for (const count of [2, 3, 4, 5, 6])
         },
     );
 
-for (const validator of [null, { workIndex: 99 }])
+for (const validator of [null, { workKey: "absent" }])
     it("actual handler rejects a missing or invalid HIGH validator without retry or persistence", async () => {
         const s = semanticPlan();
         const fetch = sdk({

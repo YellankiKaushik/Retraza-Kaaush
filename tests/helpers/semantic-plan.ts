@@ -1,7 +1,11 @@
-import type { SemanticPlan } from "@/ai/semantic-plan.server";
+import {
+    semanticPlanSchema,
+    type SemanticPlan,
+    type LegacySemanticPlan,
+} from "@/ai/semantic-plan.server";
 
 /** Meaningful offline SDK fixture; never used by the application or a live test. */
-export function semanticPlan(): SemanticPlan {
+export function legacySemanticPlan(): LegacySemanticPlan {
     const task = (key: string, title: string, criterion: string) => ({
         key,
         content: {
@@ -179,4 +183,53 @@ export function semanticPlan(): SemanticPlan {
         bottleneckReason: "Verify weekly capacity before committing to the portfolio scope.",
         blocker: null,
     };
+}
+
+export function semanticPlan(): SemanticPlan {
+    const old = legacySemanticPlan();
+    const lists = old.strategies.map((s) => s.milestones.flatMap((m) => m.work));
+    return semanticPlanSchema.parse({
+        ...old,
+        strategies: old.strategies.map((s, si) => ({
+            ...s,
+            milestones: s.milestones.map((m) => ({
+                ...m,
+                work: m.work.map(({ prerequisiteIndexes, ...item }) => ({
+                    ...item,
+                    dependency: prerequisiteIndexes.length
+                        ? {
+                              kind: "AFTER",
+                              workKeys: prerequisiteIndexes.map((index) => lists[si]![index]!.key),
+                          }
+                        : { kind: "INDEPENDENT" },
+                })),
+            })),
+        })),
+        assumptions: Object.fromEntries(
+            Object.entries(old.assumptions).map(([slot, a]) => [
+                slot,
+                a === null
+                    ? null
+                    : {
+                          ...a,
+                          validator:
+                              a.validator === null
+                                  ? null
+                                  : {
+                                        workKey:
+                                            lists[a.strategy === "FIRST" ? 0 : 1]![
+                                                a.validator.workIndex
+                                            ]!.key,
+                                    },
+                      },
+            ]),
+        ),
+        bottleneck:
+            old.bottleneck === null
+                ? null
+                : {
+                      strategy: old.bottleneck.strategyIndex === 0 ? "FIRST" : "SECOND",
+                      workKey: lists[old.bottleneck.strategyIndex]![old.bottleneck.workIndex]!.key,
+                  },
+    });
 }

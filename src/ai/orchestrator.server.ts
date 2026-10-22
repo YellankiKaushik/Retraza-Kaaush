@@ -203,7 +203,11 @@ async function callModel<S extends z.ZodType>(args: {
                                           strictJsonSchema: true,
                                           provider: {
                                               ...(process.env["OPENROUTER_PROVIDER_ONLY"]
-                                                  ? { only: [process.env["OPENROUTER_PROVIDER_ONLY"]] }
+                                                  ? {
+                                                        only: [
+                                                            process.env["OPENROUTER_PROVIDER_ONLY"],
+                                                        ],
+                                                    }
                                                   : {}),
                                               allow_fallbacks: false,
                                               require_parameters: true,
@@ -269,6 +273,10 @@ async function callModel<S extends z.ZodType>(args: {
             } catch (error) {
                 diagnostic.errorKind = safeAiErrorKind(error);
                 diagnostic.validationIssues = safeValidationIssues(error);
+                const referenceIndex = (error as { referenceTargetIndex?: unknown })
+                    ?.referenceTargetIndex;
+                diagnostic.referenceTargetIndex =
+                    typeof referenceIndex === "number" ? referenceIndex : null;
                 diagnostic.providerErrorCode = safeProviderErrorCode(error);
                 const status = (error as { statusCode?: number })?.statusCode;
                 if (typeof status === "number") diagnostic.httpStatus = status;

@@ -18,6 +18,7 @@ export interface AiDiagnostics {
         | "complete";
     errorKind?: string | null;
     validationIssues?: { code: string; path: (string | number)[] | null }[];
+    referenceTargetIndex?: number | null;
 }
 
 const issueCodes = [
@@ -32,7 +33,7 @@ const issueCodes = [
     "invalid_value",
 ];
 const issueFields = new Set(
-    "choices message content finish_reason usage prompt_tokens completion_tokens completion_tokens_details reasoning_tokens model created id normalizedObjective strategies milestones work key source title description nodeType completionCriteria expectedResult estimatedMinutes impact urgency effortCost successLikelihood prerequisiteIndexes conditions assumptions first second third fourth fifth statement importance validator workIndex strategy risks mitigation likelihood severity feasibility confidence summary bottleneck strategyIndex bottleneckReason blocker tempId".split(
+    "choices message content finish_reason usage prompt_tokens completion_tokens completion_tokens_details reasoning_tokens model created id normalizedObjective strategies milestones work key source title description nodeType completionCriteria expectedResult estimatedMinutes impact urgency effortCost successLikelihood prerequisiteIndexes dependency kind workKeys workKey conditions assumptions first second third fourth fifth statement importance validator workIndex strategy risks mitigation likelihood severity feasibility confidence summary bottleneck strategyIndex bottleneckReason blocker tempId".split(
         " ",
     ),
 );
@@ -169,6 +170,11 @@ export function logAiDiagnostics(operation: string, diagnostic: AiDiagnostics) {
                 ? diagnostic.errorKind
                 : null,
             validationIssues: safeValidationIssues({ issues: diagnostic.validationIssues }),
+            referenceTargetIndex:
+                Number.isSafeInteger(diagnostic.referenceTargetIndex) &&
+                diagnostic.referenceTargetIndex! >= 0
+                    ? diagnostic.referenceTargetIndex
+                    : null,
             outputTokens:
                 Number.isFinite(diagnostic.outputTokens) && diagnostic.outputTokens! >= 0
                     ? diagnostic.outputTokens

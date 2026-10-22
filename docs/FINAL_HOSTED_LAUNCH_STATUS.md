@@ -1,5 +1,34 @@
 # Final Hosted Acceptance - October22, 2026
 
+## LATEST - Owned Work References, Offline Verified (October 23)
+
+The failed AtlasCloud response was not retained. Its exact historical field and
+target are UNKNOWN; compilation-stage evidence narrows the failure to unresolved
+prerequisite or bottleneck work references, not a reproduced compiler defect.
+No response replay is possible. The consumed run must never be repeated.
+
+Prompt v9-owned-work-references replaces model-counted indexes with explicit
+INDEPENDENT or AFTER dependencies naming earlier work keys in the same strategy.
+HIGH assumption validators and bottlenecks name owning-strategy work. Undeclared,
+foreign, duplicate, self and forward references fail with safe field paths; no
+hard dependency is dropped and no implicit sequencing is added. Valid legacy
+indexed output remains readable; its index range is 0 through the owning
+strategy's flattened work count minus one (strategy indexes 0/1).
+
+Offline verification: 82 focused tests PASS; full suite 244 PASS / 13 opt-in
+SKIPPED; typecheck, lint, Node build, Vercel build and secret scan PASS.
+Legacy synthetic fixtures produce identical compiled graphs; this is NOT replay
+of the missing live response. Replan/completed-work persistence remains covered.
+No inference or Supabase calls were made. All live providers remain DISABLED.
+
+The next provider gate requires fresh owner authorization for exactly one
+Dots free / AtlasCloud atlas-cloud/fp8 request, 8000 output tokens maximum,
+$0 ceiling, zero retries/fallback/database access, using v9. Fresh endpoint
+availability, supported parameters and zero pricing must be checked before that
+request. Metadata alone never authorizes activation. Shared hosted acceptance
+requires its own fresh owner-authored approval after a validated real plan.
+No Production, VibeSprint, PR or main-branch changes are authorized here.
+
 ## LATEST - One AtlasCloud Dots Request FAILED, No Retry
 
 Owner authorized exactly ONE isolated request for

@@ -149,7 +149,7 @@ it("records an HTTP200 error envelope before SDK parsing without logging its mes
 });
 it("distinguishes complete JSON with schema failure from semantic compiler rejection", async () => {
     const invalid = semanticPlan();
-    invalid.assumptions.first.validator.workIndex = 99;
+    invalid.assumptions.first.validator.workKey = secret;
     const fetch = transport(response(JSON.stringify(invalid)));
     await expect(runPlanGeneration(input)).rejects.toMatchObject({
         meta: {
@@ -158,6 +158,12 @@ it("distinguishes complete JSON with schema failure from semantic compiler rejec
                 schemaValid: true,
                 graphValid: false,
                 validationFailure: "assumption-validator",
+                validationIssues: [
+                    {
+                        code: "custom",
+                        path: ["assumptions", "first", "validator", "workKey"],
+                    },
+                ],
             },
         },
     });
