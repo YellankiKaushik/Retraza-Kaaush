@@ -10,15 +10,24 @@ export const destination = {
     name: "retraza-kaaush",
 };
 
-export function deploymentVariables(env) {
+export function deploymentVariables(env, providers = ["gemini", "groq"]) {
+    if (providers.includes("groq") && env.GROQ_CREDENTIAL_AUTHORIZED !== "true")
+        throw new Error(
+            "Groq credential ownership and explicit authorization must be established before deployment.",
+        );
+    if (
+        !providers.length ||
+        new Set(providers).size !== providers.length ||
+        providers.some((provider) => !["gemini", "groq", "openrouter"].includes(provider))
+    )
+        throw new Error("Choose an explicit supported deployment provider list.");
     const required = [
         "VITE_SUPABASE_URL",
         "VITE_SUPABASE_PUBLISHABLE_KEY",
         "SUPABASE_URL",
         "SUPABASE_PUBLISHABLE_KEY",
         "SUPABASE_SERVICE_ROLE_KEY",
-        "GEMINI_API_KEY",
-        "GROQ_API_KEY",
+        ...providers.map((provider) => `${provider.toUpperCase()}_API_KEY`),
     ];
     for (const name of required)
         if (!env[name]?.trim()) throw new Error(`${name} is required; values are never logged.`);
@@ -30,14 +39,19 @@ export function deploymentVariables(env) {
         throw new Error(
             "Deployment must retain the reviewed shared project and matching public configuration.",
         );
-    const privateValues = [env.SUPABASE_SERVICE_ROLE_KEY, env.GEMINI_API_KEY, env.GROQ_API_KEY];
+    const privateValues = [
+        env.SUPABASE_SERVICE_ROLE_KEY,
+        env.GEMINI_API_KEY,
+        env.GROQ_API_KEY,
+        env.OPENROUTER_API_KEY,
+    ].filter(Boolean);
     if (
         env.VITE_SUPABASE_PUBLISHABLE_KEY.startsWith("sb_secret_") ||
         privateValues.includes(env.VITE_SUPABASE_PUBLISHABLE_KEY)
     )
         throw new Error("A private key cannot be deployed as public configuration.");
     const values = Object.fromEntries(required.map((name) => [name, env[name]]));
-    for (const provider of ["GEMINI", "GROQ"]) {
+    for (const provider of providers.map((provider) => provider.toUpperCase())) {
         if (
             !["DEFAULT", "FAST", "PRIMARY", "CRITIC", "FALLBACK"].some((role) =>
                 env[`${provider}_MODEL_${role}`]?.trim(),
@@ -52,7 +66,9 @@ export function deploymentVariables(env) {
     for (const [name, fallback] of Object.entries({
         GEMINI_BASE_URL: "https://generativelanguage.googleapis.com/v1beta",
         GROQ_BASE_URL: "https://api.groq.com/openai/v1",
+        OPENROUTER_BASE_URL: "https://openrouter.ai/api/v1",
     })) {
+        if (!providers.some((provider) => name.startsWith(provider.toUpperCase() + "_"))) continue;
         if (env[name] && env[name] !== fallback)
             throw new Error(`${name} requires review before forwarding reused credentials.`);
         values[name] = fallback;
@@ -71,12 +87,21 @@ export function deploymentVariables(env) {
         if (env[name]?.trim()) values[name] = env[name];
     Object.assign(values, {
         AI_PROVIDER_MODE: "live",
-        AI_PROVIDER_ALLOWLIST: "gemini,groq",
-        AI_ROUTE_FAST: "groq,gemini",
-        AI_ROUTE_PRIMARY: "gemini,groq",
-        AI_ROUTE_CRITIC: "gemini,groq",
-        AI_ROUTE_FALLBACK: "gemini,groq",
-        OPENROUTER_ENABLED: "false",
+        AI_PROVIDER_MAX_RETRIES: "0",
+        AI_PROVIDER_ALLOWLIST: providers.join(","),
+        AI_ROUTE_FAST:
+            providers[0] === "gemini" && providers.includes("groq")
+                ? ["groq", ...providers.filter((provider) => provider !== "groq")].join(",")
+                : providers.join(","),
+        AI_ROUTE_PRIMARY: providers.join(","),
+        AI_ROUTE_CRITIC: providers.join(","),
+        AI_ROUTE_FALLBACK: providers.join(","),
+        ...Object.fromEntries(
+            ["gemini", "groq", "openrouter"].map((provider) => [
+                `${provider.toUpperCase()}_ENABLED`,
+                String(providers.includes(provider)),
+            ]),
+        ),
         OPENAI_ENABLED: "false",
         LOVABLE_AI_ENABLED: "false",
         RETRAZA_TEST_BACKEND_MODE: "read-only",
@@ -107,7 +132,23 @@ if (process.argv[1]?.replaceAll("\\", "/").endsWith("/retraza-vercel-env.mjs")) 
     const linked = JSON.parse(readFileSync(".vercel/project.json", "utf8"));
     if (linked.projectId !== destination.projectId || linked.orgId !== destination.orgId)
         throw new Error("Refusing to configure a different Vercel project/team.");
-    const entries = deploymentVariables(loadEnv("production", process.cwd(), ""));
+    const env = loadEnv("production", process.cwd(), "");
+    const providers = process.argv
+        .find((arg) => arg.startsWith("--providers="))
+        ?.slice("--providers=".length)
+        .split(",") ?? ["gemini", "groq"];
+    if (providers.includes("openrouter") && process.argv.includes("--apply")) {
+        const proof = JSON.parse(readFileSync("logs/release-openrouter-smoke.json", "utf8"));
+        if (
+            proof.status !== "PASS" ||
+            proof.model !== (env.OPENROUTER_MODEL_PRIMARY || env.OPENROUTER_MODEL_DEFAULT) ||
+            Date.now() - Date.parse(proof.checkedAt) > 24 * 3600_000
+        )
+            throw new Error(
+                "OpenRouter deployment requires a fresh successful contract smoke for the configured model.",
+            );
+    }
+    const entries = deploymentVariables(env, providers);
     if (process.argv.includes("--apply")) {
         // Secret values stay in stdin memory, never in process arguments or output.
         const installed = join(process.env.APPDATA, "npm/node_modules/vercel");
