@@ -67,6 +67,8 @@ it("requires exact project, scope, run, user budget and expiring owner acknowled
         { expiresAt: "2000-01-01" },
         { runId: randomUUID() },
         { scope: "golden-live" },
+        { workflow: "unreviewed-workflow" },
+        { workflow: "essential" },
     ]) {
         writeFileSync(f.approvalPath, JSON.stringify({ ...f.approval, ...patch }));
         expect(() => sharedTestApproval(f.env)).toThrow("SHARED_TEST_APPROVAL_INVALID");
@@ -83,6 +85,32 @@ it("cannot authorize shared writes with an isolation flag or an incomplete schem
     ).toThrow("TEST_ENVIRONMENT_NOT_ISOLATED");
     writeFileSync(f.schemaEvidenceFile, JSON.stringify({ catalogVerified: false }));
     expect(() => sharedTestApproval(f.env)).toThrow("SHARED_TEST_APPROVAL_INVALID");
+});
+it("binds essential acceptance to a fresh owner file without increasing the existing AI budget", () => {
+    const f = fixture();
+    const env = {
+        ...f.env,
+        RUN_SUPABASE_RLS_TESTS: "false",
+        RUN_E2E_GOLDEN: "true",
+        AI_PROVIDER_MODE: "live",
+        AI_PROVIDER_ALLOWLIST: "gemini,groq",
+        AI_PROVIDER_MAX_RETRIES: "0",
+    };
+    const approval = {
+        ...f.approval,
+        scope: "golden-live",
+        workflow: "essential",
+        maxAiOperations: 6,
+        appOrigin: "https://retraza-kaaush-reviewed.vercel.app",
+    };
+    writeFileSync(f.approvalPath, JSON.stringify(approval));
+    expect(sharedTestApproval(env)).toMatchObject({
+        workflow: "essential",
+        maxUsers: 2,
+        maxAiOperations: 6,
+    });
+    expect(() => sharedTestApproval({ ...env, AI_PROVIDER_MAX_RETRIES: "1" })).toThrow();
+    expect(() => sharedTestApproval({ ...env, RETRAZA_TEST_RUN_ID: randomUUID() })).toThrow();
 });
 it("blocks default shared admin mutations before any network request", async () => {
     const request = vi.fn();
@@ -149,4 +177,66 @@ it("leaves accounts untouched if remote cleanup ownership cannot be confirmed", 
         guarded(endpoint + "/" + (await created.json()).id, { method: "DELETE" }),
     ).rejects.toThrow("TARGET_NOT_VERIFIED");
     expect(request.mock.calls.some(([, init]) => init?.method === "DELETE")).toBe(false);
+});
+
+it("allows delete-denial probes only for exact rows inserted by this approved RLS run", async () => {
+    const f = fixture();
+    const origin = "https://usvopldwiwzlvoqawvcu.supabase.co";
+    const ids = [randomUUID(), randomUUID()];
+    const rowId = randomUUID();
+    let created = 0;
+    const request = vi.fn(async (input, init) => {
+        const path = new URL(String(input)).pathname;
+        if (path === "/auth/v1/admin/users")
+            return Response.json({ id: ids[created++], ...JSON.parse(String(init.body)) });
+        if (init.method === "POST") return Response.json([{ id: rowId }]);
+        return Response.json([]);
+    });
+    const guarded = guardSharedTestFetch(request, f.env);
+    for (const marker of ["a", "b"])
+        await guarded(origin + "/auth/v1/admin/users", {
+            method: "POST",
+            body: JSON.stringify({ email: `${f.runId}-${marker}@example.test` }),
+        });
+    const headers = (id: string) => ({
+        Authorization:
+            "Bearer x." + Buffer.from(JSON.stringify({ sub: id })).toString("base64url") + ".x",
+    });
+    const probe = (path: string) =>
+        guarded(origin + path, { method: "DELETE", headers: headers(ids[1]) });
+    await expect(probe(`/rest/v1/plans?id=eq.${rowId}&select=id`)).rejects.toThrow(
+        "DELETE_TARGET_NOT_OWNED",
+    );
+    await guarded(origin + "/rest/v1/plans", {
+        method: "POST",
+        headers: headers(ids[0]),
+        body: JSON.stringify({ user_id: ids[0] }),
+    });
+    const allowed = `/rest/v1/plans?id=eq.${rowId}&select=id`;
+    for (const path of [
+        "/rest/v1/plans?select=id",
+        `/rest/v1/plans?id=eq.${randomUUID()}&select=id`,
+        `/rest/v1/actions?id=eq.${rowId}&select=id`,
+        `/rest/v1/plans?id=neq.${rowId}&select=id`,
+        allowed + "&or=(id.not.is.null)",
+        allowed + `&id=eq.${randomUUID()}`,
+        allowed.replace("select=id", "select=*"),
+        `/rest/v1/rpc/persist_plan_graph?id=eq.${rowId}&select=id`,
+    ]) {
+        const before = request.mock.calls.length;
+        await expect(probe(path)).rejects.toThrow("DELETE_TARGET_NOT_OWNED");
+        expect(request.mock.calls).toHaveLength(before);
+    }
+    expect((await probe(allowed)).ok).toBe(true);
+
+    writeFileSync(f.approvalPath, JSON.stringify({ ...f.approval, scope: "golden-mock" }));
+    const golden = guardSharedTestFetch(request, {
+        ...f.env,
+        RUN_SUPABASE_RLS_TESTS: "false",
+        RUN_E2E_GOLDEN: "true",
+        AI_PROVIDER_MODE: "mock",
+    });
+    await expect(
+        golden(origin + allowed, { method: "DELETE", headers: headers(ids[1]) }),
+    ).rejects.toThrow("DELETE_TARGET_NOT_OWNED");
 });

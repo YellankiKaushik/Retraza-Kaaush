@@ -51,6 +51,8 @@ export function sharedTestApproval(env = process.env) {
         env.RETRAZA_TEST_RUN_ID === approval.runId &&
         approval.maxUsers === 2 &&
         approval.scope === scope &&
+        (approval.workflow === undefined ||
+            (scope === "golden-live" && ["essential", "extended"].includes(approval.workflow))) &&
         approval.maxAiOperations === (scope === "golden-live" ? 6 : 0) &&
         gates.length === 1 &&
         gates[0] !== "RUN_E2E_SIGNUP";
