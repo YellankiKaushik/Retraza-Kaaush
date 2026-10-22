@@ -1,5 +1,81 @@
 # Final Hosted Acceptance - October22, 2026
 
+## FINAL - October23 Verified Preview And Local Publication
+
+Release choice B:features and legitimate local commits ready;external live-AI
+provider/acceptance gates remain. NOT a completed real-AI product release.
+Exactly ONE Preview upload:
+dpl_Dh6JQKQVc5e5fCdsQhseo34uHsdP,READY,correct Retraza project/team,not Production.
+Stable:https://retraza-kaaush-preview-kaushik-yellanki-project.vercel.app
+Immutable:https://retraza-kaaush-il8rrqb69-kaushik-yellanki-project.vercel.app
+Built from clean committed source d818e4f0ff0ac4685ed7af1a80b81cf841740de5.
+188-file runtime/test/build/migration manifest SHA256:
+7312d9899b56d0cd8f5ae4bdfad1d46e51f8ee96e15da3ec432828ad3b5bfaa1.
+Later checkpoint commit changes documentation only,not the deployed application.
+No Git integration;local-source deployment does not publish GitHub commits.
+Stable alias readback matches this deployment;protection all_except_custom_domains.
+Safe predecessor dpl_F7CwWRkM6oVQAJosjae4m44AvKZi retained READY.
+Historical canceled Production pointer dpl_Qp3otXDpDpNRXBR94aps2FQvfNWP unchanged.
+
+Actual checks THIS finalization:230 deterministic PASS/13 opt-in skips;32 local
+browser PASS/13 live skips;10 focused hosted browser PASS;Node/Vercel builds,
+typecheck,lint PASS. Source/history/client secret scan0 findings.
+Hosted client audit36 HTML/JS assets,0 secret findings/page errors/failed responses.
+Real SSR /,/auth,/demo,/new,/settings:200 HTML,no Internal Server Error.
+Without OIDC protection:/demo302. Origin-scoped OIDC never forwarded off Preview.
+Known read-only listCases server-function probe:403,no user data read. Ad hoc
+probe exited1 because it expected Unauthorized text,which was absent;403 proves
+HTTP denial,NOT isolated auth-middleware or authenticated-handler success.
+Do not count this probe as a passing authenticated workflow or product defect.
+Runtime error query for this deployment before that probe:0 records/15min.
+Public/demo tests use real hosted assets;signup/Google request-origin checks
+INTERCEPTED,not real account creation,delivery,OAuth or persistence evidence.
+Google remains OWNER-VERIFIED PASS;not repeated. Full hosted authenticated
+dashboard/session recovery/real-AI persistence NOT reverified in this task.
+
+GET-only Supabase health/OpenAPI/Auth endpoints200. Expected project confirmed,
+16 required tables and5 required RPC definitions exposed;missingSurface=[].
+Browser/server URLs/public keys match;modern publishable key,private keys
+server-side and cloud sensitive;no private VITE variables. Email and Google
+enabled,signup not disabled. Ledger API406/PGRST106,history UNKNOWN via REST;
+prior catalog compatibility is separate evidence,not authority to replay SQL.
+No migrations,Auth settings,real-user records or database writes changed.
+No additional inference;OpenRouter429 and Gemini401 remain unresolved externally.
+Groq disabled;local Gemma listings are not validated or hosted providers.
+
+Initial67 pending files preserved in28 meaningful new local commits INCLUDING
+this final documentation checkpoint;4 preexisting unpublished commits preserved.
+Expected final total307 commits,32 unpublished against origin feature branch,
+37 ahead of origin/main. Verify actual final values with git log/status,not this
+sentence alone. Fifty was not justified by cohesive real changes;no artificial
+splitting,empty commits,timestamp changes,impersonation or rewriting history.
+Git author email matches authenticated owner profile. Remote heads verified
+unchanged:main ee2b22fc863c5c6369ad50f52a95a03dd3d94117,
+feature cd72ae7d2bd0713bec013f7affc9583aac5b3cbe.
+No push,PR1 update,merge,VibeSprint modification or Production promotion.
+Exact owner-only PowerShell publication block:MANUAL_GITHUB_RELEASE.md.
+
+ONE next owner action:inspect OpenRouter Activity for the consumed Xing429 at
+October23 00:58:50IST to determine limit source/recovery;do not purchase quota.
+Fresh explicit provider-request approval required before any inference repeat.
+After ONE provider genuinely validates a plan,review its exact cloud config,
+then prepare a separate fresh essential owner approval for the stable origin.
+Current shared harness allows Gemini/Groq only;OpenRouter requires an explicitly
+owner-bound reviewed provider scope and regression checks BEFORE authoring an
+approval. Do not bypass this guard or run an OpenRouter shared test yet.
+Refresh catalog evidence if stale using read-only export,never SQL migrations.
+Real mailbox confirmation remains unverified;preserve signup. Exact Production
+origin and /auth redirect presence remain owner-review items;no shared changes.
+Production provider configuration is NOT ready (disabled flags/stale Groq
+allowlist),and requires a proven authorized provider first. No public limited-beta
+release is implied. Separate owner Production authorization remains mandatory.
+
+Ignored evidence:logs/final-publication-{tests,browser,hosted-browser,hosted-client,
+typecheck,lint,build-node,build-vercel,shared-preflight,preview-deploy}.log;
+source-identity.json,preview-verified.json,alias-protection.json,hosted-ssr.json,
+runtime-errors.json,readonly-provider.json. These logs/approvals/secrets remain
+ignored and uncommitted. No private prompts/raw inference bodies retained.
+
 ## October23 Final Publication Checkpoint
 
 Final safe local verification:230 deterministic tests PASS/13 live skips;

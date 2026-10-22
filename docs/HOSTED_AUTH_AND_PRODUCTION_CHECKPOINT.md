@@ -1,5 +1,37 @@
 # Hosted Auth And Production Checkpoint
 
+## October23 Production Preparation - Not Authorized For Execution
+
+Latest Ready Preview: dpl_Dh6JQKQVc5e5fCdsQhseo34uHsdP on the unchanged stable
+alias. See FINAL_HOSTED_LAUNCH_STATUS.md for actual tests and source identity.
+No verified active hosted AI provider. Google auth owner-verified;mail delivery
+unverified. Essential real-AI acceptance and fresh exact-origin owner approval
+remain required. OpenRouter is not yet an allowed shared-harness provider.
+Production domain assignment is verified;redirect allowlist contents are not.
+Production variables are NOT release-ready:all providers disabled,stale Groq
+allowlist. Review a proven authorized provider before any Production build.
+Do not run the activation helper using unknown Groq or failed OpenRouter proof.
+
+After separate explicit Production authorization only:
+1. Owner verifies exact Production origin and /auth redirect entries, preserving
+   shared Site URL,VibeSprint redirects,Google setup and email confirmation.
+2. Build staged Production using reviewed Production variables,not a Preview
+   artifact assumed identical. Check exact source/project/team and secret scan.
+3. Within the owner's approved test budget,verify staged auth,server functions,
+   user-scoped persistence and AI before assigning the public Production domain.
+4. Owner separately authorizes promotion/public-access behavior,then checks the
+   exact Production origin. Do not disable protection as an incidental fix.
+5. First-release withdrawal:if smoke fails,stop promotion. If already promoted,
+   use an owner-approved maintenance deployment/withdrawal in Retraza ONLY.
+   There is no usable previous Production to roll back to (historical CANCELED
+   pointer). Never point to VibeSprint or reset the shared database.
+6. Preview-only rollback,if separately authorized:repoint ONLY its stable alias
+   to safe Ready dpl_F7CwWRkM6oVQAJosjae4m44AvKZi (all providers off),preserving
+   protection. Older enabled-Groq snapshots are not safe automatic rollback.
+7. Keep prior approved artifacts and exact source/config identity. A later
+   Production rollback requires a previously verified Production artifact and
+   separate owner decision;code rollback does not change migration history.
+
 CURRENT:owner-authorized provider verification failed;Groq origin UNKNOWN and
 disabled. Safety-only stable Preview F7Cw,all live providers disabled. OpenRouter
 one smoke failed afterHTTP200,Gemini metadata401. No real AI lifecycle PASS.
