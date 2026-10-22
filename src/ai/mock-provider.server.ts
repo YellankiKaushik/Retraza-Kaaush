@@ -6,6 +6,7 @@ import {
     type IntakeAnalysis,
     type PlanProposal,
 } from "./plan-contract";
+import type { ReplanContext } from "@/lib/planner.server";
 
 function titleFrom(rawText: string) {
     const trimmed = rawText.trim().replace(/\s+/g, " ");
@@ -83,13 +84,14 @@ export function mockPlanProposal(input: {
         successCriteria?: string[];
     };
     replan?: boolean;
+    continuity?: ReplanContext;
 }): PlanProposal {
     const title = input.objective?.title || titleFrom(input.rawText);
     const desiredOutcome =
         input.objective?.desiredOutcome || `Make measurable progress on: ${title}`;
     const suffix = input.replan ? " revised" : "";
 
-    return planProposalSchema.parse({
+    const proposal = planProposalSchema.parse({
         normalizedObjective: {
             title,
             desiredOutcome,
@@ -311,6 +313,39 @@ export function mockPlanProposal(input: {
             : "A structured first plan with one ready baseline action and one dependent blocked action.",
         blocker: null,
     });
+    // Deterministic mode follows the same continuity contract; never repair live output.
+    if (input.continuity) {
+        const context = input.continuity;
+        for (const strategy of proposal.strategies) {
+            const previousKey = context.nodes.find((node) =>
+                proposal.nodes.some(
+                    (current) =>
+                        current.tempId === node.tempId && current.strategyKey === strategy.key,
+                ),
+            )?.strategyKey;
+            const key =
+                strategy.name === context.selectedStrategy.name
+                    ? context.selectedStrategy.key
+                    : (previousKey ?? strategy.key);
+            for (const node of proposal.nodes)
+                if (node.strategyKey === strategy.key) node.strategyKey = key;
+            strategy.key = key;
+            if (key === context.selectedStrategy.key) strategy.name = context.selectedStrategy.name;
+        }
+        for (const previous of context.nodes) {
+            if (previous.status !== "DONE" && previous.status !== "IN_PROGRESS") continue;
+            const node = proposal.nodes.find((current) => current.tempId === previous.tempId);
+            if (node)
+                Object.assign(node, {
+                    title: previous.title,
+                    nodeType: previous.nodeType,
+                    strategyKey: previous.strategyKey,
+                    completionCriteria: previous.completionCriteria,
+                    expectedResult: previous.expectedResult,
+                });
+        }
+    }
+    return proposal;
 }
 
 export function mockChangeExplanation(): ChangeExplanation {
