@@ -1,5 +1,40 @@
 # Final Hosted Acceptance - October22, 2026
 
+## Release Checkpoint - v9 Preview Verified
+
+Source commit a33f5ea1f8fb1a20f481fbfaed952bd6ebc99e84 preserves diagnostic
+checkpoint aa9ba13. Runtime manifest: 188 files, SHA-256
+414dba328c300d7010e74b09f5b0cf5e36ff563ec44c8905f050255b12599148.
+One Preview-only deployment: dpl_GYMp9dhEpPv87o9sKY9YLrr5HWMg, READY.
+Stable alias: https://retraza-kaaush-preview-kaushik-yellanki-project.vercel.app
+Immutable host: https://retraza-kaaush-9ef9h14xy-kaushik-yellanki-project.vercel.app
+Protection remains all_except_custom_domains. Prior Ready deployment
+ dpl_Dh6JQKQVc5e5fCdsQhseo34uHsdP remains available. Production unchanged.
+Hosted public/demo/auth-guard checks: 8 PASS (no authenticated backend writes).
+Hosted client audit: 36 assets, zero secrets/page errors/failed responses.
+All configured live provider enable flags remain FALSE; no provider activated.
+
+Read-only exact-model endpoint metadata currently lists AtlasCloud tag
+atlas-cloud/fp8 healthy (status 0), prompt/completion prices both 0, with
+structured_outputs, response_format and max_tokens support. This is not an
+inference result and must be refreshed at execution. No other models inspected.
+
+ONE next owner action: authorize a fresh isolated v9 planning diagnostic using
+only dots-studio/dots-3-note-preview:free on AtlasCloud atlas-cloud/fp8,
+maximum 8000 output tokens, $0 cost, one request, zero retries/fallback,
+no Supabase/users/writes. Use a fresh unused UUID with the existing exclusive
+run lock; never reuse 8616d0bd-6e24-49b8-b68a-1ea8cb6d21d9. Existing harness:
+tests/integration/openrouter-plan.live.test.ts. No inference authorized now.
+Require actual content, schema success, semantic compilation, both meaningful
+strategies, assumption-validator ownership and full graph validation before any
+provider activation. Essential hosted acceptance remains BLOCKED and requires
+separate fresh owner-authored approval after real validated-plan success.
+Google OAuth remains OWNER-VERIFIED PASS; no repeated OAuth test performed.
+
+Current branch: feat/vibesprint-parity. Publication scope is one normal push of
+the preserved diagnostic checkpoint, v9 correction and this release evidence.
+No main merge, PR update, Production or VibeSprint modification.
+
 ## LATEST - Owned Work References, Offline Verified (October 23)
 
 The failed AtlasCloud response was not retained. Its exact historical field and
