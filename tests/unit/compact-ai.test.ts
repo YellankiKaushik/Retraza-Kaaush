@@ -4,6 +4,7 @@ import { runPlanGeneration, runReplan } from "@/ai/orchestrator.server";
 import { mockPlanProposal } from "@/ai/mock-provider.server";
 import { logAiDiagnostics } from "@/ai/diagnostics.server";
 import { geminiResponse } from "../helpers/gemini-response";
+import { compactPlan } from "../helpers/compact-plan";
 
 const secretMarker = "fictional-confidential-input-do-not-log";
 const input = {
@@ -79,7 +80,7 @@ describe("compact planning and safe diagnostics", () => {
     });
     it("records schema and graph PASS through the actual SDK for planning and replanning", async () => {
         const logs = configure();
-        respond(JSON.stringify(mockPlanProposal(input)));
+        respond(JSON.stringify(compactPlan()));
         for (const result of [
             await runPlanGeneration(input),
             await runReplan({ ...input, previous: "fictional", reason: "USER_REQUEST", note: "" }),
@@ -132,6 +133,18 @@ describe("compact planning and safe diagnostics", () => {
         });
         expect(fetch).toHaveBeenCalledTimes(1);
     });
+    it("rejects a schema-valid but incomplete live plan without persisting or retrying it", async () => {
+        configure();
+        const fetch = respond(JSON.stringify(mockPlanProposal(input)));
+        await expect(runPlanGeneration(input)).rejects.toMatchObject({
+            code: "AI_GRAPH_INVALID",
+            meta: {
+                schemaValid: true,
+                diagnostics: { graphValid: false, validationFailure: "milestone-count" },
+            },
+        });
+        expect(fetch).toHaveBeenCalledTimes(1);
+    });
     it("records actual timeouts without dumping error contents", async () => {
         const logs = configure();
         vi.stubGlobal(
@@ -161,9 +174,62 @@ describe("compact planning and safe diagnostics", () => {
             schemaValid: null,
             graphValid: null,
             timedOut: false,
+            validationFailure: secretMarker,
         });
         expect(JSON.stringify(logs.mock.calls)).not.toContain(secretMarker);
     });
+    for (const [rule, mutate] of [
+        [
+            "dangling-edge",
+            (p: ReturnType<typeof compactPlan>) => {
+                p.edges[0]!.to = "missing-private-node";
+            },
+        ],
+        [
+            "dependency-cycle",
+            (p: ReturnType<typeof compactPlan>) => {
+                p.edges.push({
+                    from: "action-remove-blocker",
+                    to: "action-baseline",
+                    edgeType: "REQUIRES",
+                    hardDependency: true,
+                    rationale: null,
+                });
+            },
+        ],
+        [
+            "orphan-node",
+            (p: ReturnType<typeof compactPlan>) => {
+                p.edges = p.edges.filter(
+                    (edge) => edge.from !== "action-extra-3" && edge.to !== "action-extra-3",
+                );
+            },
+        ],
+    ] as const) {
+        it(`emits the precise safe ${rule} rejection label through SDK validation`, async () => {
+            const logs = configure();
+            const proposal = compactPlan();
+            mutate(proposal);
+            const fetch = respond(JSON.stringify(proposal));
+            await expect(
+                runReplan({ ...input, previous: "fictional", reason: "USER_REQUEST", note: "" }),
+            ).rejects.toMatchObject({
+                code: "AI_GRAPH_INVALID",
+                meta: {
+                    diagnostics: {
+                        provider: "gemini",
+                        schemaValid: true,
+                        graphValid: false,
+                        validationFailure: rule,
+                    },
+                },
+            });
+            expect(fetch).toHaveBeenCalledOnce();
+            expect(JSON.stringify(logs.mock.calls)).toContain(rule);
+            expect(JSON.stringify(logs.mock.calls)).not.toContain("missing-private-node");
+            expect(JSON.stringify(logs.mock.calls)).not.toContain(secretMarker);
+        });
+    }
     it("classifies a Gemini 504 as a timeout, not a schema failure", async () => {
         configure();
         vi.stubGlobal(
@@ -192,7 +258,7 @@ describe("compact planning and safe diagnostics", () => {
     });
     it("records the configured Gemini model when the adapter does not expose a served version", async () => {
         configure();
-        respond(JSON.stringify(mockPlanProposal(input)), "stop", 200, "gemini-3.8-flash-001");
+        respond(JSON.stringify(compactPlan()), "stop", 200, "gemini-3.8-flash-001");
         const result = await runPlanGeneration(input);
         expect(result.meta.providerModel).toBe("gemini-3.8-flash");
         expect(result.meta.diagnostics?.providerModel).toBe("gemini-3.8-flash");

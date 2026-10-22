@@ -14,7 +14,7 @@ import { z } from "zod";
 
 import { BANDS, EDGE_TYPES, INTENT_TYPES, NODE_TYPES } from "@/domain/types";
 
-export const PROMPT_VERSION = "v2-compact";
+export const PROMPT_VERSION = "v8-authorized-semantic-provider";
 
 /** String, truncated to a hard maximum after generation. */
 const text = (max: number) => z.string().transform((value) => value.trim().slice(0, max));
@@ -92,11 +92,15 @@ export const planProposalSchema = z.object({
     ),
     nodes: list(
         z.object({
-            tempId: text(40),
+            tempId: text(40).describe(
+                "Unique node ID, at most 40 characters. Edges and assumption validators must copy this exact ID.",
+            ),
             nodeType: z.enum(NODE_TYPES),
             title: text(160),
             description: text(800),
-            strategyKey: text(40).nullable(),
+            strategyKey: text(40)
+                .nullable()
+                .describe("Exact key of a declared strategy; null only for shared nodes."),
             depth: num(0, 8).describe("graph depth, 0-8"),
             impact: num(1, 5).describe("1-5, 5 = highest impact"),
             urgency: num(1, 5).describe("1-5, 5 = most urgent"),
@@ -121,8 +125,16 @@ export const planProposalSchema = z.object({
     assumptions: list(
         z.object({
             statement: text(400),
-            importance: z.enum(BANDS),
-            validationNodeTempId: text(40).nullable(),
+            importance: z
+                .enum(BANDS)
+                .describe(
+                    "HIGH requires validationNodeTempId to identify an existing ACTION or EXPERIMENT.",
+                ),
+            validationNodeTempId: text(40)
+                .nullable()
+                .describe(
+                    "Copy an existing nodes[].tempId exactly, never a title, strategy key or edge ID. HIGH: required, non-null, nodeType ACTION or EXPERIMENT. MEDIUM/LOW: existing node ID or null. No empty strings or invented IDs.",
+                ),
         }),
         12,
     ),
