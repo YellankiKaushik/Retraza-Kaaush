@@ -6,16 +6,199 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { PlanProposal } from "@/ai/plan-contract";
-import { findHardCycle } from "@/domain/frontier";
+import { computeFrontier, executionNodesForStrategy, findHardCycle } from "@/domain/frontier";
 import type { GraphEdge, GraphNode } from "@/domain/types";
 import type { Database } from "@/integrations/supabase/types";
 
 type Client = SupabaseClient<Database>;
+type Row<T extends keyof Database["public"]["Tables"]> = Database["public"]["Tables"][T]["Row"];
+
+export interface ReplanContext {
+    versionId: string;
+    planId: string;
+    selectedStrategy: { key: string; name: string };
+    strategies: Array<{ key: string; name: string; summary: string; selected: boolean }>;
+    nodes: Array<{
+        tempId: string;
+        nodeType: GraphNode["node_type"];
+        title: string;
+        description: string;
+        status: GraphNode["status"];
+        strategyKey: string | null;
+        completionCriteria: string | null;
+        expectedResult: string | null;
+        completedAt: string | null;
+        result: Row<"actions">["result"];
+    }>;
+    edges: PlanProposal["edges"];
+}
+
+/** Only owner-scoped ACTIVE graph rows may supply continuity or completion evidence. */
+export function buildReplanContext(input: {
+    planId: string;
+    userId: string;
+    versionId: string;
+    version: Pick<
+        Row<"plan_versions">,
+        "id" | "plan_id" | "user_id" | "state" | "parent_version_id"
+    >;
+    nodes: Row<"plan_nodes">[];
+    edges: Row<"plan_edges">[];
+    strategies: Row<"strategies">[];
+    actions: Row<"actions">[];
+}): ReplanContext {
+    const invalid = () =>
+        new DomainError(
+            "PLAN_VALIDATION_FAILED",
+            "The accepted plan context is inconsistent. Refresh before replanning.",
+            "version-relationship",
+        );
+    if (
+        input.version.id !== input.versionId ||
+        input.version.plan_id !== input.planId ||
+        input.version.user_id !== input.userId ||
+        input.version.state !== "ACTIVE" ||
+        input.version.parent_version_id === input.versionId
+    )
+        throw invalid();
+    for (const rows of [input.nodes, input.edges, input.strategies])
+        if (
+            rows.some(
+                (row) => row.user_id !== input.userId || row.plan_version_id !== input.versionId,
+            )
+        )
+            throw invalid();
+    if (input.actions.some((action) => action.user_id !== input.userId)) throw invalid();
+    const selected = input.strategies.filter((strategy) => strategy.selected);
+    if (selected.length !== 1 || !input.nodes.length) throw invalid();
+    const strategyKeys = new Map(
+        input.strategies.map((strategy) => {
+            const member = input.nodes.find((node) => node.strategy_id === strategy.id);
+            const metadata = member?.metadata as Record<string, unknown> | null;
+            return [
+                strategy.id,
+                typeof metadata?.["strategyKey"] === "string"
+                    ? metadata["strategyKey"]
+                    : strategy.id,
+            ];
+        }),
+    );
+    const ids = new Map(
+        input.nodes.map((node) => {
+            const metadata = node.metadata as Record<string, unknown> | null;
+            return [
+                node.id,
+                typeof metadata?.["tempId"] === "string" ? metadata["tempId"] : node.id,
+            ];
+        }),
+    );
+    if (
+        new Set(ids.values()).size !== input.nodes.length ||
+        input.actions.some((action) => !ids.has(action.plan_node_id))
+    )
+        throw invalid();
+    const actions = new Map(input.actions.map((action) => [action.plan_node_id, action]));
+    return {
+        versionId: input.versionId,
+        planId: input.planId,
+        selectedStrategy: { key: strategyKeys.get(selected[0]!.id)!, name: selected[0]!.name },
+        strategies: input.strategies.map((strategy) => ({
+            key: strategyKeys.get(strategy.id)!,
+            name: strategy.name,
+            summary: strategy.summary,
+            selected: strategy.selected,
+        })),
+        nodes: input.nodes.map((node) => {
+            const action = actions.get(node.id);
+            if ((node.node_type === "ACTION" || node.node_type === "EXPERIMENT") && !action)
+                throw invalid();
+            if (node.strategy_id && !strategyKeys.has(node.strategy_id)) throw invalid();
+            return {
+                tempId: ids.get(node.id)!,
+                nodeType: node.node_type,
+                title: node.title,
+                description: node.description,
+                status: node.status,
+                strategyKey: node.strategy_id ? strategyKeys.get(node.strategy_id)! : null,
+                completionCriteria: action?.completion_criteria ?? null,
+                expectedResult: action?.expected_result ?? null,
+                completedAt: action?.completed_at ?? null,
+                result: action?.result ?? null,
+            };
+        }),
+        edges: input.edges.map((edge) => {
+            if (!ids.has(edge.from_node_id) || !ids.has(edge.to_node_id)) throw invalid();
+            return {
+                from: ids.get(edge.from_node_id)!,
+                to: ids.get(edge.to_node_id)!,
+                edgeType: edge.edge_type,
+                hardDependency: edge.hard_dependency,
+                rationale: edge.rationale,
+            };
+        }),
+    };
+}
+
+export function selectedReplanStrategy(proposal: PlanProposal, context: ReplanContext) {
+    const selected = proposal.strategies.find(
+        (strategy) =>
+            strategy.key === context.selectedStrategy.key &&
+            strategy.name === context.selectedStrategy.name,
+    );
+    if (!selected)
+        throw new DomainError(
+            "PLAN_VALIDATION_FAILED",
+            "A revised plan must preserve the selected strategy for your review.",
+            "strategy-selection",
+        );
+    return selected.key;
+}
+
+/** AI cannot erase verified completion, or silently remove still-retained hard prerequisites. */
+export function validateReplanContinuity(proposal: PlanProposal, context: ReplanContext) {
+    selectedReplanStrategy(proposal, context);
+    const byId = new Map(proposal.nodes.map((node) => [node.tempId, node]));
+    for (const previous of context.nodes) {
+        if (previous.status !== "DONE" && previous.status !== "IN_PROGRESS") continue;
+        const next = byId.get(previous.tempId);
+        if (
+            !next ||
+            next.nodeType !== previous.nodeType ||
+            next.title !== previous.title ||
+            next.completionCriteria !== previous.completionCriteria ||
+            next.expectedResult !== previous.expectedResult ||
+            next.strategyKey !== previous.strategyKey
+        )
+            throw new DomainError(
+                "PLAN_VALIDATION_FAILED",
+                "A revised plan must preserve completed and in-progress work unchanged.",
+                "progress-preservation",
+            );
+    }
+    for (const edge of context.edges) {
+        if (!edge.hardDependency || !byId.has(edge.from) || !byId.has(edge.to)) continue;
+        if (
+            !proposal.edges.some(
+                (next) =>
+                    next.from === edge.from &&
+                    next.to === edge.to &&
+                    next.edgeType === edge.edgeType &&
+                    next.hardDependency,
+            )
+        )
+            throw new DomainError(
+                "PLAN_VALIDATION_FAILED",
+                "A revised plan lost an existing hard prerequisite between retained steps.",
+                "prerequisite-preservation",
+            );
+    }
+}
 
 export class DomainError extends Error {
     constructor(
         public code: string,
         message: string,
+        public validationRule?: string,
     ) {
         super(message);
     }
@@ -32,7 +215,11 @@ export function assertOk<T>(
 }
 
 /** Graph-integrity validation applied to every AI proposal before persistence. */
-export function validateProposal(proposal: PlanProposal) {
+export function validateProposal(
+    proposal: PlanProposal,
+    requireCompactProfile = false,
+    continuity?: ReplanContext,
+) {
     if (
         proposal.nodes.some((node) => !node.tempId.trim()) ||
         proposal.strategies.some((strategy) => !strategy.key.trim())
@@ -66,6 +253,7 @@ export function validateProposal(proposal: PlanProposal) {
         throw new DomainError(
             "PLAN_VALIDATION_FAILED",
             "The proposed plan contains duplicate node ids.",
+            "duplicate-node",
         );
 
     for (const edge of proposal.edges) {
@@ -73,11 +261,13 @@ export function validateProposal(proposal: PlanProposal) {
             throw new DomainError(
                 "PLAN_VALIDATION_FAILED",
                 "The proposed plan references a dependency node that does not exist.",
+                "dangling-edge",
             );
         if (edge.from === edge.to)
             throw new DomainError(
                 "PLAN_VALIDATION_FAILED",
                 "The proposed plan contains a self-referential dependency.",
+                "dependency-cycle",
             );
     }
 
@@ -96,6 +286,7 @@ export function validateProposal(proposal: PlanProposal) {
         throw new DomainError(
             "PLAN_VALIDATION_FAILED",
             "The proposed plan assigns a node to a strategy that does not exist.",
+            "strategy-selection",
         );
 
     const nodes = proposal.nodes.map((n) => ({
@@ -128,6 +319,7 @@ export function validateProposal(proposal: PlanProposal) {
         throw new DomainError(
             "PLAN_VALIDATION_FAILED",
             "The proposed plan contained a circular dependency and was rejected.",
+            "dependency-cycle",
         );
 
     const executable = nodes.filter((n) => n.nodeType === "ACTION" || n.nodeType === "EXPERIMENT");
@@ -159,10 +351,146 @@ export function validateProposal(proposal: PlanProposal) {
             throw new DomainError(
                 "PLAN_VALIDATION_FAILED",
                 "An assumption validation link must reference an existing plan node.",
+                "assumption-validator",
             );
     }
 
+    if (requireCompactProfile && !proposal.blocker) {
+        const recommendedKey = recommended[0]?.key;
+        const milestones = nodes.filter(
+            (node) => node.nodeType === "MILESTONE" && node.strategyKey === recommendedKey,
+        );
+        const checks: Array<[boolean, string, string]> = [
+            [proposal.strategies.length === 2, "exactly two strategies", "strategy-count"],
+            [
+                milestones.length >= 3 && milestones.length <= 5,
+                "three to five recommended milestones",
+                "milestone-count",
+            ],
+            [
+                executable.length >= 6 && executable.length <= 12,
+                "six to twelve executable nodes",
+                "executable-count",
+            ],
+            [
+                nodes.length <= 24 && edges.length <= 48,
+                "at most 24 nodes and 48 edges",
+                "graph-size",
+            ],
+            [
+                proposal.strategies.every((strategy) =>
+                    executable.some((node) => node.strategyKey === strategy.key),
+                ),
+                "an executable branch for each strategy",
+                "strategy-branch",
+            ],
+            [
+                proposal.assumptions.length >= 3 && proposal.assumptions.length <= 5,
+                "three to five assumptions",
+                "assumptions-count",
+            ],
+            [
+                proposal.risks.length >= 3 && proposal.risks.length <= 5,
+                "three to five risks",
+                "risks-count",
+            ],
+            [
+                proposal.assumptions.every(
+                    (assumption) =>
+                        assumption.importance !== "HIGH" ||
+                        executable.some((node) => node.tempId === assumption.validationNodeTempId),
+                ),
+                "an action or experiment validating every high-importance assumption",
+                "assumption-validator",
+            ],
+        ];
+        for (const [valid, requirement, rule] of checks)
+            if (!valid)
+                throw new DomainError(
+                    "PLAN_VALIDATION_FAILED",
+                    "The live plan must include " + requirement + ".",
+                    rule,
+                );
+
+        const connected = new Set([objectives[0]!.tempId]);
+        for (let index = 0; index < nodes.length; index++)
+            for (const edge of edges)
+                if (connected.has(edge.from) || connected.has(edge.to)) {
+                    connected.add(edge.from);
+                    connected.add(edge.to);
+                }
+        if (connected.size !== nodes.length)
+            throw new DomainError(
+                "PLAN_VALIDATION_FAILED",
+                "Every live plan node must connect to the objective graph.",
+                "orphan-node",
+            );
+        if (proposal.assumptions.some((assumption) => !assumption.statement.trim()))
+            throw new DomainError(
+                "PLAN_VALIDATION_FAILED",
+                "Assumptions must state a verifiable condition.",
+                "assumptions-content",
+            );
+        if (proposal.risks.some((risk) => !risk.statement.trim() || !risk.mitigation.trim()))
+            throw new DomainError(
+                "PLAN_VALIDATION_FAILED",
+                "Risks require a statement and mitigation.",
+                "risks-content",
+            );
+    }
+
+    if (continuity) validateReplanContinuity(proposal, continuity);
+    if (requireCompactProfile && !proposal.blocker)
+        validateExecutableProposal(proposal, continuity);
     return { nodes, edges };
+}
+
+function previousUnchanged(node: PlanProposal["nodes"][number], context?: ReplanContext) {
+    const previous = context?.nodes.find((item) => item.tempId === node.tempId);
+    return previous?.nodeType === node.nodeType &&
+        previous.title === node.title &&
+        previous.completionCriteria === node.completionCriteria &&
+        previous.expectedResult === node.expectedResult &&
+        previous.strategyKey === node.strategyKey
+        ? previous
+        : undefined;
+}
+
+function validateExecutableProposal(proposal: PlanProposal, context?: ReplanContext) {
+    const selected = context
+        ? selectedReplanStrategy(proposal, context)
+        : (proposal.strategies.find((strategy) => strategy.recommended)?.key ?? null);
+    const graphNodes: GraphNode[] = proposal.nodes.map((node) => ({
+        id: node.tempId,
+        node_type: node.nodeType,
+        title: node.title,
+        description: node.description,
+        status: previousUnchanged(node, context)?.status ?? "PENDING",
+        priority_score: null,
+        depth: node.depth,
+        strategy_id: node.strategyKey,
+        metadata: {},
+    }));
+    const graphEdges: GraphEdge[] = proposal.edges.map((edge, index) => ({
+        id: String(index),
+        from_node_id: edge.from,
+        to_node_id: edge.to,
+        edge_type: edge.edgeType,
+        hard_dependency: edge.hardDependency,
+        rationale: edge.rationale,
+    }));
+    const execution = executionNodesForStrategy(graphNodes, graphEdges, selected);
+    const incomplete = execution.some(
+        (node) =>
+            ["ACTION", "EXPERIMENT"].includes(node.node_type) &&
+            !["DONE", "SKIPPED", "CANCELLED"].includes(node.status),
+    );
+    if (incomplete && !computeFrontier(execution, graphEdges).ready.length)
+        throw new DomainError(
+            "PLAN_VALIDATION_FAILED",
+            "The selected strategy has no executable next step. Identify an explicit blocker instead.",
+            "executable-frontier",
+        );
 }
 
 export interface PersistArgs {
@@ -179,18 +507,48 @@ export interface PersistArgs {
     promptVersion: string;
     activate: boolean;
     strategyPreference?: string | null;
+    continuity?: ReplanContext;
 }
 
 /** Validate in application code, then commit the entire graph in one transaction. */
 export async function persistProposal(args: PersistArgs) {
     const { proposal } = args;
-    const { nodes, edges } = validateProposal(proposal);
+    const { nodes, edges } = validateProposal(
+        proposal,
+        Boolean(args.generationSource && args.generationSource.provider !== "mock"),
+        args.continuity,
+    );
+    if (
+        args.strategyPreference &&
+        !proposal.strategies.some((strategy) => strategy.key === args.strategyPreference)
+    )
+        throw new DomainError(
+            "PLAN_VALIDATION_FAILED",
+            "The selected strategy does not exist in this proposal.",
+            "strategy-selection",
+        );
+    if (args.continuity) {
+        if (
+            args.activate ||
+            args.parentVersionId !== args.continuity.versionId ||
+            args.planId !== args.continuity.planId
+        )
+            throw new DomainError(
+                "PLAN_VALIDATION_FAILED",
+                "A replan must be a candidate of the accepted version in this plan.",
+                "version-relationship",
+            );
+        validateReplanContinuity(proposal, args.continuity);
+    }
     const recommendedKey =
+        (args.continuity ? selectedReplanStrategy(proposal, args.continuity) : null) ??
         (args.strategyPreference &&
             proposal.strategies.find((s) => s.key === args.strategyPreference)?.key) ??
         proposal.strategies.find((s) => s.recommended)?.key ??
         proposal.strategies[0]?.key ??
         null;
+    const unchanged = (node: PlanProposal["nodes"][number]) =>
+        previousUnchanged(node, args.continuity);
     const strategyIds = new Map(proposal.strategies.map((s) => [s.key, crypto.randomUUID()]));
     const nodeIds = new Map(nodes.map((n) => [n.tempId, crypto.randomUUID()]));
     const uniqueEdges = [
@@ -225,7 +583,7 @@ export async function persistProposal(args: PersistArgs) {
             node_type: n.nodeType,
             title: n.title,
             description: n.description,
-            status: "PENDING",
+            status: unchanged(n)?.status ?? "PENDING",
             depth: Math.round(n.depth),
             metadata: {
                 impact: n.impact,
@@ -233,6 +591,7 @@ export async function persistProposal(args: PersistArgs) {
                 effortCost: n.effortCost,
                 successLikelihood: n.successLikelihood,
                 tempId: n.tempId,
+                strategyKey: n.strategyKey,
                 expectedResult: n.expectedResult,
                 ...(args.generationSource ? { aiGeneration: args.generationSource } : {}),
             },
@@ -251,6 +610,8 @@ export async function persistProposal(args: PersistArgs) {
                 completion_criteria: n.completionCriteria ?? "",
                 expected_result: n.expectedResult,
                 estimated_minutes: n.estimatedMinutes ? Math.round(n.estimatedMinutes) : null,
+                completed_at: unchanged(n)?.completedAt ?? null,
+                result: unchanged(n)?.result ?? null,
             })),
         assumptions: proposal.assumptions.map((a) => ({
             statement: a.statement,
