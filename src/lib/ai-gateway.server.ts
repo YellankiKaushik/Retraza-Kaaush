@@ -1,6 +1,7 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { createGoogle } from "@ai-sdk/google";
 import type { LanguageModel } from "ai";
+import { withOpenRouterResponseDiagnostics } from "@/ai/openrouter-response.server";
 
 /**
  * The only trusted inference boundary. Provider credentials and model IDs are
@@ -216,6 +217,9 @@ function createProvider(providerId: ProviderId, apiKey: string) {
         ...(providerId !== "lovable-ai" ? { apiKey } : {}),
         headers: createHeaders(providerId, apiKey),
         supportsStructuredOutputs: true,
+        ...(providerId === "openrouter"
+            ? { fetch: withOpenRouterResponseDiagnostics(globalThis.fetch) }
+            : {}),
     });
 }
 
@@ -232,6 +236,7 @@ export function candidatesForAlias(alias: ModelAlias): AiProviderCandidate[] {
         const apiKey = process.env[config.keyEnv];
         const modelId = modelForProviderAlias(providerId, alias);
         if (!apiKey || !modelId) continue;
+        if (providerId === "openrouter" && !modelId.endsWith(":free")) continue;
 
         const provider = createProvider(providerId, apiKey);
         candidates.push({
@@ -300,7 +305,14 @@ export function classifyAiError(error: unknown): AiFailure {
             message: "AI is not configured for this app.",
             retryable: false,
         };
-    if (status === 400 || /schema|zod|json|parse|object generated|malformed/i.test(message))
+    if (status === 400)
+        return {
+            code: "AI_SCHEMA_INVALID",
+            message:
+                "The AI provider rejected the planning request. No new plan was saved; existing plans and progress are unchanged.",
+            retryable: false,
+        };
+    if (/schema|zod|json|parse|object generated|malformed/i.test(message))
         return {
             code: "AI_SCHEMA_INVALID",
             message: "The planning engine returned invalid structured output. Please try again.",

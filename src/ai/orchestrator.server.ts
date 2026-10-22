@@ -5,8 +5,17 @@
  */
 import { generateObject, NoObjectGeneratedError } from "ai";
 import type { z } from "zod";
-import { validateProposal } from "@/lib/planner.server";
-import { logAiDiagnostics, type AiDiagnostics } from "./diagnostics.server";
+import { DomainError, validateProposal } from "@/lib/planner.server";
+import {
+    logAiDiagnostics,
+    safeProviderErrorCode,
+    safeAiErrorKind,
+    safeValidationIssues,
+    type AiDiagnostics,
+} from "./diagnostics.server";
+import { compileSemanticPlan, semanticPlanSchema, type SemanticPlan } from "./semantic-plan.server";
+import { groqPlanningOutputSchema } from "./groq-plan-schema.server";
+import { semanticPlanningSystem } from "./prompts.server";
 
 import {
     candidatesForAlias,
@@ -72,7 +81,8 @@ async function callModel<S extends z.ZodType>(args: {
     prompt: string;
     correlationId: string;
     mock: () => z.infer<S>;
-    validateGraph?: (data: z.infer<S>) => unknown;
+    validateGraph?: (data: z.infer<S>, requireCompactProfile?: boolean) => unknown;
+    compileSemantic?: (data: SemanticPlan) => z.infer<S>;
 }): Promise<AiCallResult<z.infer<S>>> {
     const started = Date.now();
 
@@ -135,19 +145,33 @@ async function callModel<S extends z.ZodType>(args: {
         for (let attempt = 0; attempt <= maxProviderRetries(); attempt += 1) {
             const attemptStarted = Date.now();
             diagnostic = {
+                provider: candidate.providerId,
                 providerModel: candidate.modelId,
                 outputTokens: null,
                 finishReason: null,
                 schemaValid: null,
                 graphValid: null,
                 timedOut: false,
+                stage: "provider-response",
             };
             inputTokens = null;
             try {
+                if (process.env["RETRAZA_TEST_BACKEND_MODE"] === "controlled-shared")
+                    console.info(
+                        "SHARED_AI_PROVIDER_ATTEMPT",
+                        JSON.stringify({
+                            operation: args.operation,
+                            provider: candidate.providerId,
+                            attempt,
+                            correlationId: args.correlationId,
+                        }),
+                    );
+                const semantic =
+                    ["groq", "openrouter"].includes(candidate.providerId) && args.compileSemantic;
                 const result = await generateObject({
                     model: candidate.model,
-                    schema: args.schema,
-                    system: args.system,
+                    schema: semantic ? groqPlanningOutputSchema : (args.schema as z.ZodType),
+                    system: semantic ? semanticPlanningSystem() : args.system,
                     prompt: args.prompt,
                     ...(candidate.providerId === "gemini"
                         ? {
@@ -161,7 +185,31 @@ async function callModel<S extends z.ZodType>(args: {
                                   },
                               },
                           }
-                        : {}),
+                        : candidate.providerId === "groq"
+                          ? {
+                                providerOptions: {
+                                    groq: {
+                                        strictJsonSchema: [
+                                            "openai/gpt-oss-20b",
+                                            "openai/gpt-oss-120b",
+                                        ].includes(candidate.modelId),
+                                    },
+                                },
+                            }
+                          : candidate.providerId === "openrouter"
+                            ? {
+                                  providerOptions: {
+                                      openrouter: {
+                                          strictJsonSchema: true,
+                                          provider: {
+                                              allow_fallbacks: false,
+                                              require_parameters: true,
+                                              max_price: { prompt: 0, completion: 0 },
+                                          },
+                                      },
+                                  },
+                              }
+                            : {}),
                     maxRetries: 0,
                     maxOutputTokens: maxOutputTokens(),
                     abortSignal: AbortSignal.timeout(timeoutMs()),
@@ -170,13 +218,21 @@ async function callModel<S extends z.ZodType>(args: {
                 inputTokens = result.usage?.inputTokens ?? null;
                 diagnostic.outputTokens = result.usage?.outputTokens ?? null;
                 diagnostic.finishReason = result.finishReason;
-                const data = args.schema.parse(result.object);
                 diagnostic.schemaValid = true;
+                diagnostic.stage = semantic ? "semantic-compilation" : "output-validation";
+                if (args.validateGraph) diagnostic.graphValid = false;
+                const data = args.schema.parse(
+                    semantic
+                        ? args.compileSemantic!(semanticPlanSchema.parse(result.object))
+                        : result.object,
+                );
                 if (args.validateGraph) {
+                    diagnostic.stage = "graph-validation";
                     diagnostic.graphValid = false;
-                    args.validateGraph(data);
+                    args.validateGraph(data, true);
                     diagnostic.graphValid = true;
                 }
+                diagnostic.stage = "complete";
                 logAiDiagnostics(args.operation, diagnostic);
 
                 attempts.push({
@@ -208,7 +264,19 @@ async function callModel<S extends z.ZodType>(args: {
                     },
                 };
             } catch (error) {
+                diagnostic.errorKind = safeAiErrorKind(error);
+                diagnostic.validationIssues = safeValidationIssues(error);
+                diagnostic.providerErrorCode = safeProviderErrorCode(error);
+                const status = (error as { statusCode?: number })?.statusCode;
+                if (typeof status === "number") diagnostic.httpStatus = status;
+                const retryAfter = (error as { responseHeaders?: Record<string, string> })
+                    ?.responseHeaders?.["retry-after"];
+                if (retryAfter && /^\d+$/.test(retryAfter))
+                    diagnostic.retryAfterSeconds = Number(retryAfter);
+                if (error instanceof DomainError && error.code === "PLAN_VALIDATION_FAILED")
+                    diagnostic.validationFailure = error.validationRule ?? "graph-integrity";
                 if (NoObjectGeneratedError.isInstance(error)) {
+                    diagnostic.stage = "output-validation";
                     inputTokens = error.usage?.inputTokens ?? null;
                     diagnostic.outputTokens = error.usage?.outputTokens ?? null;
                     diagnostic.finishReason = error.finishReason ?? null;
@@ -242,9 +310,11 @@ async function callModel<S extends z.ZodType>(args: {
     }
 
     const enriched = new Error(
-        lastFailure.retryable
-            ? "AI is temporarily unavailable after trying every configured provider. Saved plans still work."
-            : lastFailure.message,
+        attempts.some((attempt) => attempt.outcome === "AI_RATE_LIMITED")
+            ? "AI could not produce a valid plan: a configured provider is rate limited and the other candidates did not succeed. Your accepted plan and progress are unchanged. Wait for provider quota to recover before requesting another replan."
+            : lastFailure.retryable
+              ? "AI is temporarily unavailable after trying every configured provider. Saved plans still work."
+              : lastFailure.message,
     ) as Error & {
         code: string;
         retryable: boolean;
@@ -301,6 +371,7 @@ export function runPlanGeneration(
         correlationId: input.correlationId,
         mock: () => mockPlanProposal(input),
         validateGraph: validateProposal,
+        compileSemantic: compileSemanticPlan,
     });
 }
 
@@ -316,7 +387,8 @@ export function runReplan(
         prompt,
         correlationId: input.correlationId,
         mock: () => mockPlanProposal({ ...input, replan: true }),
-        validateGraph: validateProposal,
+        validateGraph: (proposal, strict) => validateProposal(proposal, strict, input.continuity),
+        compileSemantic: (data) => compileSemanticPlan(data, input.continuity),
     });
 }
 
