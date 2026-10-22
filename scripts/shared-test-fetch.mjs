@@ -1,6 +1,7 @@
 import { mkdirSync, openSync, closeSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { sharedTestApproval } from "./test-environment.mjs";
+import { requiredTables } from "./shared-preflight.mjs";
 
 const runs = new Map();
 const sharedHost = "usvopldwiwzlvoqawvcu.supabase.co";
@@ -32,7 +33,13 @@ export function guardSharedTestFetch(request, env = process.env) {
             );
         let state = runs.get(approval.runId);
         if (!state) {
-            state = { users: new Map(), attempts: 0, token: randomUUID(), claimed: false };
+            state = {
+                users: new Map(),
+                records: new Set(),
+                attempts: 0,
+                token: randomUUID(),
+                claimed: false,
+            };
             runs.set(approval.runId, state);
         }
         const headers = new Headers(
@@ -119,8 +126,36 @@ export function guardSharedTestFetch(request, env = process.env) {
             throw new Error(
                 "Shared test mutations require a session belonging to a verified current-run account.",
             );
-        if (url.pathname.startsWith("/rest/v1/") && method === "DELETE")
-            throw new Error("Direct REST deletions are outside the reviewed shared test scope.");
+        const table = url.pathname.match(/^\/rest\/v1\/([a-z_]+)$/)?.[1];
+        if (table && method === "POST" && requiredTables.includes(table)) {
+            const response = await request(input, init);
+            if (response.ok && body.user_id === subject(token)) {
+                const result = await response
+                    .clone()
+                    .json()
+                    .catch(() => null);
+                for (const row of Array.isArray(result) ? result : [result])
+                    if (typeof row?.id === "string") state.records.add(table + ":" + row.id);
+            }
+            return response;
+        }
+        if (url.pathname.startsWith("/rest/v1/") && method === "DELETE") {
+            const ids = url.searchParams.getAll("id");
+            const id = ids.length === 1 ? ids[0].match(/^eq\.([0-9a-f-]{36})$/i)?.[1] : null;
+            if (
+                approval.scope !== "rls" ||
+                !table ||
+                !id ||
+                !state.records.has(table + ":" + id) ||
+                [...url.searchParams.keys()].some((key) => !["id", "select"].includes(key)) ||
+                url.searchParams.getAll("select").length !== 1 ||
+                url.searchParams.get("select") !== "id"
+            )
+                throw new Error(
+                    "DELETE_TARGET_NOT_OWNED: RLS denial probes require one exact current-run inserted row ID and select=id.",
+                );
+            return request(input, init);
+        }
         if (url.pathname.startsWith("/rest/v1/") || url.pathname === "/auth/v1/logout")
             return request(input, init);
         throw new Error("Unreviewed shared test operation blocked.");

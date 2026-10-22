@@ -1,5 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { requiredTables } from "../../scripts/shared-preflight.mjs";
 
 import type { Database } from "@/integrations/supabase/types";
 import { persistProposal } from "@/lib/planner.server";
@@ -36,6 +38,7 @@ describeIfConfigured("live Supabase RLS two-user isolation", () => {
     const runId = `reversepath-rls-${process.env["RETRAZA_TEST_RUN_ID"] || crypto.randomUUID()}`;
     const password = "ReversePath-test-password-12345";
     const users: string[] = [];
+    const deletedUsers: string[] = [];
     let admin: SupabaseClient<Database>;
     let userA: SupabaseClient<Database>;
     let userB: SupabaseClient<Database>;
@@ -62,19 +65,57 @@ describeIfConfigured("live Supabase RLS two-user isolation", () => {
             if (marker === "a") userA = await signIn(email, password);
             else userB = await signIn(email, password);
         }
-    });
+    }, 60_000);
 
     afterAll(async () => {
         if (!admin) return;
-        await Promise.all([userA?.auth.signOut(), userB?.auth.signOut()]);
-        const cleanup = await Promise.all(
-            users.map((userId) => admin.auth.admin.deleteUser(userId)),
+        const cleanupErrors: string[] = [];
+        const remainingRecords: Record<string, number | null> = {};
+        await Promise.allSettled([userA?.auth.signOut(), userB?.auth.signOut()]);
+        for (const userId of users) {
+            try {
+                const result = await admin.auth.admin.deleteUser(userId);
+                if (result.error) cleanupErrors.push("Account deletion failed: " + userId);
+                else deletedUsers.push(userId);
+            } catch {
+                cleanupErrors.push("Account cleanup could not be verified: " + userId);
+            }
+        }
+        // Counts only: never query unrelated user rows or use a broad cleanup.
+        if (users.length)
+            for (const table of requiredTables) {
+                try {
+                    const result = await admin
+                        .from(table)
+                        .select("user_id", { count: "exact", head: true })
+                        .in("user_id", users);
+                    remainingRecords[table] = result.error ? null : result.count;
+                } catch {
+                    remainingRecords[table] = null;
+                }
+            }
+        mkdirSync("logs", { recursive: true });
+        writeFileSync(
+            `logs/${runId}.json`,
+            JSON.stringify(
+                {
+                    runId: process.env["RETRAZA_TEST_RUN_ID"],
+                    scope: "rls",
+                    projectRef: new URL(url!).hostname.split(".")[0],
+                    completedAt: new Date().toISOString(),
+                    createdUsers: users,
+                    deletedUsers,
+                    remainingRecords,
+                    cleanupErrors,
+                },
+                null,
+                2,
+            ),
         );
-        expect(
-            cleanup.every((result) => !result.error),
-            "Only current-run test users were cleaned up",
-        ).toBe(true);
-    });
+        expect(cleanupErrors, "Only verified current-run accounts may be cleaned up").toEqual([]);
+        expect(deletedUsers).toHaveLength(users.length);
+        expect(Object.values(remainingRecords).every((count) => count === 0)).toBe(true);
+    }, 60_000);
 
     async function createUserAPlanGraph() {
         const created = await userA
@@ -503,6 +544,14 @@ describeIfConfigured("live Supabase RLS two-user isolation", () => {
         const updateByB = await userB.from(table).update(update).eq("id", id).select("id");
         expect(updateByB.error, `${table} update`).toBeNull();
         expect(updateByB.data, `${table} update`).toEqual([]);
+
+        const deleteByB = await userB.from(table).delete().eq("id", id).select("id");
+        expect(deleteByB.error, `${table} delete`).toBeNull();
+        expect(deleteByB.data, `${table} delete`).toEqual([]);
+
+        const retainedByA = await userA.from(table).select("id").eq("id", id).single();
+        expect(retainedByA.error, `${table} retained by owner`).toBeNull();
+        expect(retainedByA.data?.id, `${table} retained by owner`).toBe(id);
     }
 
     it("prevents another authenticated user from reading or mutating private case and plan data", async () => {
@@ -518,6 +567,23 @@ describeIfConfigured("live Supabase RLS two-user isolation", () => {
         await expectUserBDenied("risks", ids.riskId, { statement: "tampered" });
         await expectUserBDenied("check_ins", ids.checkInId, { note: "tampered" });
         await expectUserBDenied("plan_changes", ids.changeId, { after_summary: "tampered" });
+
+        expect(
+            (
+                await userB.rpc("activate_plan_version_for_user", {
+                    target_plan_id: ids.planId,
+                    target_version_id: ids.versionId,
+                })
+            ).error,
+        ).not.toBeNull();
+        expect(
+            (
+                await userB.rpc("select_plan_strategy", {
+                    target_version_id: ids.versionId,
+                    target_strategy_id: ids.strategyId,
+                })
+            ).error,
+        ).not.toBeNull();
 
         const readableByA = await userA
             .from("plan_nodes")
