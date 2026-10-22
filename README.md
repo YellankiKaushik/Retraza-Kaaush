@@ -6,10 +6,73 @@ server-side AI, Zod validation and deterministic dependency/progress logic.
 
 ## Current Verification
 
-The latest [source parity matrix](docs/FINAL_SOURCE_PARITY_MATRIX.md) records
-119 deterministic tests and 28 browser tests passing locally and on Preview. Live shared acceptance is
-still blocked, not passed. [Owner actions](docs/OWNER_ACTIONS_REQUIRED.md) and
-the [deployment runbook](docs/RETRAZA_DEPLOYMENT_RUNBOOK.md) consolidate the next steps.
+October23 final publication checkpoint: 230 deterministic tests PASS (13 live
+skips),32 local browser tests PASS (13 intentional skips),typecheck/lint and
+Node/Vercel builds PASS. Source/history/client secret scan:zero findings.
+Latest OpenRouter request returned HTTP200 with an error429 envelope and no
+assistant content;schema/compiler not reached. No inference repeated.
+All live providers remain disabled. Google auth remains OWNER-VERIFIED PASS.
+See FINAL_HOSTED_LAUNCH_STATUS.md for the actual latest deployment and commit
+checkpoint. The chronological notes below are historical,not live authorization.
+
+CURRENT:owner does not recognize Groq credential;provenance UNKNOWN,Groq disabled.
+One owner-authorized OpenRouter free-model planning request returnedHTTP200 but
+failed before a validated result;Gemini official metadata authentication401.
+No live provider currently verified/active. Stable Preview F7Cw is SAFETY-ONLY,
+all live providers disabled;demo/auth/saved plans remain available. No hidden mock.
+221 deterministic tests/32 local browsers/8 focused hosted checks PASS;both builds,
+typecheck/lint/security/dependency audit PASS. These do NOT prove real AI planning.
+Google stable OWNER-VERIFIED PASS;email confirmation unverified. Production:NO.
+[Canonical evidence and owner action](docs/FINAL_HOSTED_LAUNCH_STATUS.md).
+All earlier Groq retest instructions below are historical,NOT authorization.
+
+Current v7:218 offline tests and32 local/32 hosted browser tests passed;typecheck,
+lint,both builds,security and dependency audit passed. Minimal strict Groq provider
+schema is separated from unchanged semantic/runtime validation;nullable nested
+unions flattened. READY dpl_69vQJtoRbiPGx9CKW3VLdjVE66Zm serves the stable alias.
+The one authorized isolated request BEFORE final union correction returned400
+on response_format(anyOf indicator);final real provider success remains unverified.
+No retry or shared database write occurred. Stable Google sign-in is
+OWNER-VERIFIED PASS;email confirmation unverified. Next gate:separately authorized
+provider-only retest,then fresh essential acceptance. Production:NO.
+Older results below are historical;[canonical status](docs/FINAL_HOSTED_LAUNCH_STATUS.md).
+
+Latest actual essential v6 acceptance: **FAIL** at initial Groq plan request
+(HTTP400,before output/graph validation). Login/classification/saved clarification
+passed;no plan persisted,later lifecycle not reached. Both temporary users were
+deleted;all16 tables have zero run-owned records. No retry. Detailed provider
+rejection reason is unresolved. Local diagnostic correction is NOT deployed and
+not a generation fix. See [actual evidence](docs/FINAL_HOSTED_LAUNCH_STATUS.md);
+do not issue another live approval yet. Stable Preview remains READY.
+The pending-approval preparation and verification counts below are historical.
+
+The [semantic compiler release report](docs/SEMANTIC_COMPILER_RELEASE.md) records
+the protected stable [Retraza Preview](https://retraza-kaaush-preview-kaushik-yellanki-project.vercel.app).
+Groq now generates nested semantic work; deterministic code constructs graph
+ownership, IDs, dependencies and assumption links before unchanged validation and
+atomic persistence. Strict JSON Schema/zero retries; no live mock fallback.
+Offline213 tests (12 skipped) and local/hosted browser32 tests (13 skipped each)
+passed. Typecheck/lint/Node+Vercel builds/source+history+client security passed.
+The v6 bounded-assumption correction is implemented: ONE collection with three
+required slots and two nullable slots, verified in the actual emitted SDK schema.
+READY Preview dpl_7fYdNrA9pYDrB7Ti8Uhv7biynUva serves the stable alias. The
+[single approved v5 acceptance](docs/FINAL_HOSTED_LAUNCH_STATUS.md) FAILED aggregate
+assumptions-count before persistence; cleanup verified. Its v6 replacement has
+not run live: one NEW owner-authored essential approval is the next gate.
+No automatic rerun; see the current report for the exact PowerShell command.
+OpenRouter key authentication now works, but its one contract request returned404;
+it remains disabled. Gemini metadata now returns401 and is disabled too.
+Groq alone is selected for all routes; its current key/model metadata check passed.
+One verified provider is sufficient; no requirement for all three to pass.
+
+See the current [AI replanning reliability report](docs/AI_REPLANNING_RELIABILITY_REPORT.md)
+for offline fixes, exact verification counts and the fresh live-retest checkpoint.
+Catalog compatibility, prior live RLS and mock Golden Path passed. The latest
+v4 essential real-AI Golden Path failed at strategy-branch; v5 subsequently
+failed at aggregate assumptions-count. Local/public tests are not hosted lifecycle
+acceptance. Owner reported real Google success on an earlier Preview; stable
+request-origin contracts pass, genuine mailbox/stable callback checks remain manual.
+[Owner actions](docs/OWNER_ACTIONS_REQUIRED.md) consolidate the remaining gates.
 
 The VibeSprint reference is immutable. Its historical release results are not
 Retraza verification. See [parity report](docs/VIBESPRINT_PARITY_REPORT.md),
@@ -23,7 +86,7 @@ See [shared compatibility and approval checkpoint](docs/SHARED_SUPABASE_COMPATIB
 **No GitHub publishing, shared database writes or Production promotion is authorized.**
 The October20 task authorized the independent [Retraza Preview](https://retraza-kaaush-f6yk0unsr-kaushik-yellanki-project.vercel.app), now READY and tested with protection enabled.
 See [current completion evidence](docs/FINAL_RETRAZA_COMPLETION.md). Real hosted
-authentication/RLS/Golden Path remain blocked; the prepared demo is not live AI.
+authentication and full live-AI acceptance remain unverified; the prepared demo is not live AI.
 The owner reviews and publishes manually using [the release runbook](docs/MANUAL_GITHUB_RELEASE.md).
 
 ## Install And Run
@@ -62,9 +125,9 @@ Keep matching browser/server URLs and publishable keys:
 - `SUPABASE_SERVICE_ROLE_KEY`: server-only; supports modern `sb_secret_` keys.
 
 Run `npm.cmd run check:shared` for GET-only surface inspection. All eight
-migrations remain committed; do not replay them merely because their remote
-ledger is inaccessible. The API exposes all required tables/RPCs, but catalog/RLS
-compatibility still needs owner-account read access. Run the prepared
+migrations are structurally present in the verified shared catalog; do not replay
+them or rewrite the ledger. Catalog evidence must be less than 24 hours old for
+each separately approved writing test. To refresh expired evidence, run the prepared
 `supabase/SHARED_READ_ONLY_PREFLIGHT.sql` in that project's SQL Editor and save
 its single catalog JSON value to an ignored local file. Compare locally:
 
