@@ -1,5 +1,709 @@
 # Retraza / ReversePath Handoff
 
+## October23 Final Publication Checkpoint
+
+Final safe local verification:230 deterministic tests PASS/13 live skips;
+32 local browser tests PASS/13 intentional live skips;typecheck,lint,Node and
+Vercel production builds PASS. Secret scan source/history/client:0 findings.
+No inference or shared database-writing tests repeated. Google stable
+authentication remains OWNER-VERIFIED PASS;real email delivery remains unverified.
+
+Read-only metadata at2026-10-22T18:53:40Z:OpenRouter auth200,free quota50 remaining,
+one healthy zero-price Xing endpoint advertising strict output support.
+This does NOT negate the consumed diagnostic's HTTP200/error429/no-content
+failure or prove inference availability. Gemini401 ACCESS_TOKEN_TYPE_UNSUPPORTED
+persists with explicit native key and no GOOGLE_API_KEY override.
+No verified active provider. Groq remains disabled due unknown ownership.
+Installed local Ollama lists gemma4:e4b and gemma4-lab:latest (9.6GB each).
+No local inference,adapter activation,tunnel or hosted availability claimed.
+
+Phase1 inventory:67 real pending files,279 existing commits,4 unpublished versus
+origin/feat/vibesprint-parity (9 versus origin/main),no staged work. Authenticated
+GitHub owner profile email matches configured Git author. Origin points exactly
+to YellankiKaushik/Retraza-Kaaush;reference push URL disabled. No active Git hooks.
+Twenty-six focused commits preserve code/tests/dependencies and historical
+sanitized reports so far;no artificial50-commit splitting,empty commits,dates,
+impersonation,rewrites or pushes. Final checkpoint documentation follows.
+Public/source/test snapshots exclude .env,logs,approvals,.vercel and private data.
+
+Read-only Vercel inspection confirms correct Retraza project/team,READY F7Cw,
+stable alias/protection intact,NO Git integration. Deployment is from local
+source,not automatic GitHub sync. Exact Production domain assigned/verified;
+historical CANCELED Production pointer is not a usable rollback. All cloud
+provider enabled flags false;Production allowlist still groq and NOT release-ready.
+Production provider config must be reviewed after a provider is truly verified.
+No shared Auth/site URL/redirects/schema/ledger or VibeSprint change authorized.
+Authenticated hosted dashboard/session/persistence are NOT re-proven by public
+or intercepted tests. Prior RLS/mock evidence remains separate historical PASS.
+One latest-source safety Preview update is authorized;see the following final
+deployment checkpoint for its actual outcome,not a claimed AI release.
+
+Owner-only publication commands are in MANUAL_GITHUB_RELEASE.md. After review,
+normal push only;stop on remote divergence or dirty tree. Preserve meaningful
+history with an owner-reviewed non-squash merge into main,not agent merge.
+Primary blocker:no verified hosted AI provider;essential acceptance cannot run.
+ONE next owner action:inspect OpenRouter Activity for the consumed Xing429 at
+2026-10-22T18:28:50Z (October23 00:58:50IST) and identify its recovery window.
+No inference retry until fresh explicit scope approval. Do not buy credits or
+change billing. Alternate owner path is inspect Gemini key type/binding in
+Google AI Studio;no automatic key creation/rotation. Production promotion and
+fresh owner-authored shared acceptance remain separately gated.
+
+## LATEST - Single Authorized OpenRouter Diagnostic FAILED
+
+One authorized request completed at 2026-10-22T18:28:50Z (October23 IST).
+Run UUID: 0e2ab34c-7236-4215-b591-ce93d2d173de; consumed, NEVER rerun.
+Fresh key/account/endpoint metadata and outgoing-body guards passed before POST:
+exact xingchen-agi/xing4.0-29b-a4b:free, healthy zero-price endpoint supporting
+requested parameters, require_parameters=true, no fallbacks, max_price=0,
+max_tokens=8000. Requests1, attempts1, retries0, users0, Supabase calls/writes0.
+HTTP200 body was a JSON ERROR envelope with numeric error code429 and NO choices,
+model field, or assistant text. Finish/input/output/reasoning counts unavailable.
+Failure stage: provider-response; SDK AI_APICallError, missing choices.
+No semantic schema parse, compiler or graph validation was reached.
+This proves a rate-limit error envelope for THIS run, not the cause of the older
+unretained response. Account-versus-upstream limit source/recovery time UNKNOWN.
+No raw response/message/prompt/credential retained.
+Evidence: logs/openrouter-plan-0e2ab34c-7236-4215-b591-ce93d2d173de.json.
+Original consumed lock/report retained; no second request or provider selected.
+
+Small LOCAL correction: recognize numeric400-599 errors inside HTTP-success
+envelopes without assistant output and throw a sanitized non-SDK-retryable
+APICallError. Existing classification now reports AI_RATE_LIMITED for429 instead
+of AI_SCHEMA_INVALID. No validation weakening or retry-policy change. Regression
+confirms one fetch and no secret/message leakage. All68 focused SDK/semantic/
+compiler/local-PGlite persistence tests PASS; typecheck and lint PASS.
+Logs: openrouter-final-diagnostic-offline/typecheck/lint.log.
+No deployment: stable Preview remains on previously READY
+dpl_F7CwWRkM6oVQAJosjae4m44AvKZi; all live providers remain disabled.
+Stable: https://retraza-kaaush-preview-kaushik-yellanki-project.vercel.app
+No Supabase/Google OAuth/Auth/schema/GitHub/PR1/VibeSprint/Production changes.
+Google authentication remains OWNER-VERIFIED PASS; not retested.
+Essential hosted acceptance remains BLOCKED: no real validated provider plan.
+Next owner action: inspect OpenRouter Activity for this model at the timestamp
+above to identify the429 limit and its recovery window. Do not buy quota or
+change billing. A later diagnostic needs fresh explicit one-request approval.
+Do not execute shared acceptance without its separate fresh owner approval.
+
+## LATEST - Diagnostic Scope Prepared, No Live Authorization
+
+Read FINAL_HOSTED_LAUNCH_STATUS.md first. Prior OpenRouter200 cause UNKNOWN;
+body/content lengths/finish/usage/error type never retained. No budget,SDK or
+semantic cause can be asserted. Read-only current Xing:free/Phala metadata healthy.
+Gemini reason now known:ACCESS_TOKEN_TYPE_UNSUPPORTED,401;no GOOGLE_API_KEY
+precedence collision,explicit native GEMINI_API_KEY header verified. Auth-looking
+key is not proof of actual account binding. Official current Google docs permit
+Auth and restricted Standard keys;do not invent blanket Standard rejection.
+Added LOCAL openrouter-response.server.ts safe pre-SDK shape/count-only logging,
+gateway hook,orchestrator stage/error-kind metadata;no raw content/keys retained.
+New openrouter-response.test.ts covers actual SDK string/array extraction,
+truncation,reasoning-only output,200 error envelope,schema/semantic failures.
+Sanitized validation cause issue codes/known-field paths also captured;no raw
+messages/values/unknown keys. All68 focused tests,final typecheck/lint/secrets PASS.
+68 focused SDK/adapter/semantic/handler/localSQL tests PASS,typecheck/lint/secrets
+PASS. No full suites/browser/hosted/RLS repeated. No inference/users/DB writes.
+Existing openrouter-plan.live.test.ts PREPARED for fresh explicit owner approval:
+new UUID,per-run exclusive lock,fresh read-only key/account/free-endpoint/quota
+checks,1POST/8000tokens/90s,zero retries/fallback/paid routing,shape+stage evidence,
+per-run failure report;successful proof only updated on PASS. All old locks and
+proofs preserved. NO owner approval or UUID created,NO new live run. Do not run
+under old authorization. Exact owner-only command/scope in canonical report.
+Next owner action:authorize that one isolated diagnostic request. Only AFTER
+real full semantic/graph PASS activate exact tested provider/Preview;shared
+essential approval and Production remain separate. Groq stays disabled/forbidden.
+StableF7Cw unchanged,Google OWNER-VERIFIED PASS,no Google repeat,email unverified.
+No deployment/GitHub/PR1/VibeSprint/Supabase/Auth change. Branchfeat/vibesprint-
+parity/HEADff2cf508,prior dirty work preserved;new diagnostics not deployed.
+
+## CURRENT - Unknown Groq Disabled, Owner Provider Blocker
+
+Read FINAL_HOSTED_LAUNCH_STATUS.md FIRST. Owner does NOT recognize Groq key;
+provenance UNKNOWN. Local ignored .env and Retraza Vercel sensitive entry found,
+no tracked/history exposure. NO Groq requests. Disabled Groq local and Retraza
+deployment config,no deletion/revocation/rotation. Never follow old Groq retest
+instructions. Existing immutable old Previews retain old snapshots:do not use AI
+there or roll back without reviewed provider config. Stable is now safety-only.
+Owner OpenRouter key auth200;/models,/models/user/endpoints metadata200.
+xingchen-agi/xing4.0-29b-a4b:free/Phala healthy,zero prices,structured outputs.
+ONE isolated smoke17:35UTC returned HTTP200 but failed SDK/result processing,
+AI_SCHEMA_INVALID,no validated semantic graph;detailed reason UNKNOWN. Requests1,
+retries0,users0,DB writes0. Consumed owner-openrouter-plan-20261022.lock,do not
+reuse/remove. No second provider inference. Gemini read-only officialmodels GET
+x-goog-api-key returned401 UNAUTHENTICATED;no alternative local key found.
+No authorized provider currently operationally verified;all live flags FALSE.
+Local route OpenRouter only,disabled. No hidden mock;demo explicitly offline.
+Source:OpenRouter added to existing semantic compiler path and zero-price/no-
+fallback strict request config;non-:free models ineligible. Deployment helper
+requires explicit Groq ownership authorization. .env.example safer defaults.
+Tests221 deterministic PASS/13 skips;32 local browsers PASS/13 skips;8 focused
+hosted PASS,typecheck/lint/both builds/secrets PASS,dependency audit0. Exact logs
+and metadata in canonical report;no shared/RLS/Golden Path rerun this task.
+ONE safety-only Preview READY dpl_F7CwWRkM6oVQAJosjae4m44AvKZi now stable alias,
+v8-authorized-semantic-provider,source hash b3ca6619f96f12c0c2d4b367d5e19f723e0db5aecb6f1b5f25ae02bd6b088f28.
+Project/team/Preview/source/disabled providers checked;Protection/Production
+unchanged. Branch feat/vibesprint-parity,HEAD ff2cf508,dirty work preserved.
+No GitHub/PR1/VibeSprint/Supabase/Auth/schema changes or Production deployment.
+Google stable OWNER-VERIFIED PASS,no repeat;email confirmation UNVERIFIED.
+Next owner action:verify/restore original Gemini API access in AI Studio/update
+ignored GEMINI_API_KEY privately as needed,no new keys/billing. No automatic
+inference follows. Essential approval stays BLOCKED until isolated provider PASS.
+Do not fabricate/shared approvals,enable unknown Groq or repeat smoke automatically.
+
+## Current v7 Checkpoint - Provider Retest Required
+
+Read FINAL_HOSTED_LAUNCH_STATUS.md FIRST. Owner confirms STABLE Google sign-in
+WORKS:OWNER-VERIFIED PASS;do not repeat Google tests/configuration requests.
+Email confirmation UNVERIFIED;no email functionality hidden without decision.
+Implemented src/ai/groq-plan-schema.server.ts:minimal provider JSON grammar,
+original semantic Zod/runtime/compiler validation unchanged. Constants->enum,
+runtime bounds removed from provider grammar only,strict=true retained. Actual
+SDK handler wire tests verify model/params/required closed objects/3+2 slots.
+One authorized isolated Groq request FAIL HTTP400,response_format rejected,
+safe indicators anyOf/schema;no users/DB writes/retries. Original detailed
+historical400 reason UNKNOWN. Smoke data/consumed lock:
+logs/groq-planning-contract-20261022.json/.lock;DO NOT repeat/delete lock.
+After that sole request,offline reproduced and flattened nested nullable anyOf
+into typed union branches. This FINAL fix is OFFLINE verified,NOT live verified.
+218 unit/integration/SQL PASS,13 skips;32 local+32 hosted browser PASS,13 skips
+each. Typecheck/lint/both builds/security PASS,dependency audit0 vulnerabilities.
+ExactlyONE Preview upload READY dpl_69vQJtoRbiPGx9CKW3VLdjVE66Zm;stable alias
+repointed after exact Retraza team/project/preview/source verification. 7f/J2
+rollback retained,Protection/Production unchanged. Source161-file hash in
+logs/groq-wire-source-identity.json matches deployed metadata;HEAD ff2cf508,
+branch feat/vibesprint-parity,existing dirty work preserved,no commit/push.
+Changed this task:groq-plan-schema.server.ts,orchestrator.server.ts,
+plan-contract.ts(v7),scripts/final-release-audit.mjs,new groq-plan-schema unit
+and groq-plan-contract.live integration tests,semantic-generation tests,docs.
+Latest diagnostic corrections from prior turn included in this Preview.
+No shared Supabase/VibeSprint/GitHub/PR1/Production modifications.
+Next agent:ONLY after fresh owner authorization,prepare a separately identified
+one-shot provider-only retest of final v7;no shared acceptance until it passes.
+Existing isolated smoke guard is consumed. Do not manufacture shared approvals.
+Production still NO;Google PASS,email unverified,essential lifecycle pending.
+
+## Latest Actual v6 Essential Result - FAIL
+
+Read FINAL_HOSTED_LAUNCH_STATUS.md FIRST. Owner438aac94-9404-4913-8773-4d2ca481d8e5
+approval validated and consumed ONCE against exact READY v6 stable Preview.
+No retry. Login/goal/classification/clarification PASS. Initial Groq planning
+rejected HTTP400;schema/graph/finishReason null,no returned plan evaluated.
+Detailed provider rejection reason UNKNOWN (deployed logs did not retain it).
+2 actual Groq logical operations/0 retries;classification944 input772 output,
+generation token counts unknown. No plan persisted,later lifecycle NOT REACHED.
+2 users created/deleted,cleanup0 errors,all16 tables0 records. Existing user
+records not modified within guarded run scope. No schema/Auth/GitHub/VibeSprint/
+Preview upload/Production change. Approval cannot be reused even if unexpired.
+Local follow-up changes:src/ai/diagnostics.server.ts allowlisted provider codes,
+src/ai/orchestrator.server.ts safe extraction,src/lib/ai-gateway.server.ts accurate
+400 message;tests/integration/semantic-generation.test.ts two request-rejection
+regressions. No speculative semantic-contract weakening. These local corrections
+are NOT deployed and do NOT establish the HTTP400 root cause/fix.
+Branch feat/vibesprint-parity/HEAD ff2cf508 and existing dirty work preserved.
+Next agent:inspect canonical evidence and emitted request;resolve provider400
+before requesting another live approval. Never reuse438aac94/older files or
+probe live inference automatically. Owner next action:stable real mailbox/Google
+checklist,independent of AI. Production remains blocked;publishing owner-only.
+Final local check:release EXIT0,215 unit/integration/SQL PASS/12 skips,32 browser
+PASS/13 skips;typecheck/lint/Node+Vercel builds/security PASS. No deployment of
+local follow-up. Logs:essential-438aac94-offline-release.log and matching
+vercel-build.log. Current Preview remains READY;Production/protection unchanged.
+
+## Current v6 Checkpoint - Supersedes Historical Sections
+
+Read FINAL_HOSTED_LAUNCH_STATUS.md first. Cardinality correction IMPLEMENTED:
+single root3 required assumptions +2 nullable slots; typed owning-strategy/work
+validators, HIGH non-null. Strict actual SDK wire verified; duplicates/placeholder/
+oversize/invalid targets reject. No padding/truncation or graph/SQL weakening.
+Changed this task:src/ai/{semantic-plan.server.ts,prompts.server.ts,plan-contract.ts},
+tests/helpers/semantic-plan.ts,tests/unit/semantic-plan.test.ts,
+tests/integration/semantic-generation.test.ts and existing release documentation.
+No migration or application UI change. Prompt v6-bounded-assumptions.
+Branch feat/vibesprint-parity, HEAD ff2cf508, existing4 ahead commits/dirty work
+preserved; no commit/push. Env names unchanged:server GROQ_API_KEY,
+GROQ_MODEL_DEFAULT/FAST,AI_PROVIDER_MODE/ALLOWLIST/MAX_RETRIES,AI_ROUTE_*;
+Supabase server URL/publishable/secret,public VITE_SUPABASE_URL/PUBLISHABLE_KEY.
+Never expose private values. Groq-only OSS20b/retries0, other providers disabled.
+Actual check:release EXIT0:213 unit/integration/SQL PASS,12 skipped; local32
+browser PASS,13 skipped. Vercel build and source/client/history scan PASS.
+Hosted32 PASS/13 skipped,SSR/protection/client audit PASS,36 assets/0 findings.
+Exactly ONE Preview upload READY dpl_7fYdNrA9pYDrB7Ti8Uhv7biynUva; existing
+stable alias repointed after project/team/source verification. J2 retained.
+Production/protection unchanged. No shared writes/users/inference/GitHub/VibeSprint.
+Remaining P0/P1 release gates:one NEW owner-approved essential live run; genuine
+stable mailbox/Google callback; separate Production approval; owner publication.
+Exact next action:owner runs new-owner-essential-approval.ps1 with stable origin
+and -Approve as documented in FINAL_HOSTED_LAUNCH_STATUS.md, then authorizes run.
+Agent must NOT create approval or run it now. All freshness/hash/UUID/unused-lock/
+budget/ownership/cleanup protections remain. Never reuse b68503bf/older approvals.
+
+## Final Hosted v5 Result - LATEST
+
+Read FINAL_HOSTED_LAUNCH_STATUS.md FIRST. Fresh b68503bf-d195-4166-9264-d22af64e30da
+approval validated/consumed ONCE on stable origin/actual v5 source. FAIL initial
+GENERATE_PLAN_GRAPH, assumptions-count, schema valid/stop, not timeout/HTTP error.
+Actual aggregate count UNKNOWN outside3-5, no raw response retained. Real login/
+classification/clarification PASS; no plan persisted/later lifecycle NOT REACHED.
+2 Groq logical operations/zero retries;2 users deleted/all16 tables0 rows. No
+existing data/schema/Auth/GitHub/VibeSprint/deployment modifications. No rerun.
+Structural wire issue isolated:separate unbounded assumption collections allow
+invalid aggregate count. Specific bounded-root contract correction + offline
+validation plan PREPARED in report, NOT implemented or deployed this phase.
+23 focused compiler/handler regressions PASS (includes4 new boundary cases),
+typecheck/focused lint PASS; unchanged102 runtime inputs match reviewed build.
+Added auth-origin-contract browser tests2 PASS on stable actual page, all backend
+requests intercepted. Google earlier Preview WORKS per owner; stable exact project/
+redirect contract PASS, genuine stable callback/mailbox delivery owner-interactive
+PENDING. No repeated old Preview test requested.
+Current engineering blocker:assumption cardinality. Do not ask for further live
+approvals/Production before offline correction. Owner can complete independent
+stable Auth checklist. All prior source work/branch/HEAD preserved; only tests/docs
+added during this verification. Production/domain/protection privately rechecked.
+
+## Semantic Compiler Release - LATEST
+
+Read SEMANTIC_COMPILER_RELEASE.md FIRST. Structural release Groq path now uses
+semantic ownership -> deterministic graph compiler, not another prompt-only fix.
+v5-semantic-compiler deployed ONCE:Ready dpl_J2rCtSRLW5Rk8K8mJvGYe6EbFCfN.
+Stable protected Preview:
+https://retraza-kaaush-preview-kaushik-yellanki-project.vercel.app
+Immutable:https://retraza-kaaush-1ylcwp1vq-kaushik-yellanki-project.vercel.app
+Alias belongs to exact Retraza project/deployment. Production pointer/protection
+unchanged, D437 predecessor retained. No shared Auth entries changed.
+Runtime:semantic-plan.server new; orchestrator/prompts/plan-contract updated.
+Nested strategies/milestones/work/assumptions, IDs/edges compiled, strict Groq
+json_schema true verified with mocked SDK and official docs. Existing validators,
+atomic persistence, RLS, history and completion evidence remain unchanged.
+Old optional disabled provider adapters retain legacy graph contracts; no claims
+of Gemini/OpenRouter live verification. Mock mode explicit only.
+Actual generate AND replan source handlers tested with SDK HTTP mocks and real
+serialization. SQL test runs compiled candidates through reject/accept/evidence
+in LOCAL PGlite. Final check:release EXIT0,192 local PASS/12 skips,30 browser
+PASS/13 skips; Vercel build/lint/typecheck/secrets PASS, audit0 vulnerabilities.
+Hosted stable30/0/13, SSR/protection both origins PASS,36 client responses0
+findings/errors/failures, runtime error query0 records/15min. logs/semantic-*.
+No actual AI/shared writes/new owner files/GitHub/VibeSprint/Production changes.
+HEAD ff2cf508, branch feat/vibesprint-parity ahead4, all dirty work preserved.
+Current next owner bundle: add ONLY stable origin and /auth if missing, personally
+author/authorize NEW essential approval as documented. DO NOT run any writing
+test yet or reuse old approvals. Budget4 logical Groq/zero retries/2 users/16-table
+cleanup; ceiling6 unchanged. Real mailbox/Google and later separate Production/
+manual GitHub gates remain. Do not request Production before real acceptance.
+
+## Essential Hosted v4 Result - LATEST
+
+Read ESSENTIAL_HOSTED_V4_REPORT.md first. Fresh owner approval
+ad62dde0-8c50-443a-87fc-92aca831a91b validated/consumed ONCE on exact pzj0xqmxh
+Preview. FAIL at GENERATE_PLAN_GRAPH, strategy-branch, schema valid/normal stop,
+not timeout/HTTP error. At least one strategy lacked an assigned ACTION/EXPERIMENT.
+Two logical Groq operations/zero retries. Login/classification/clarification
+persisted; no plan saved, subsequent lifecycle NOT REACHED. HIGH assumption
+validation comes after this rule, so do NOT claim v4 assumption live PASS.
+Two users created/deleted,0 cleanup errors/0 rows in all16 tables, no existing
+user/schema/Auth/GitHub/VibeSprint/deployment changes.56 focused offline PASS.
+New report and HOSTED_AUTH_AND_PRODUCTION_CHECKPOINT.md prepared; no source change.
+Do not rerun this or any consumed approval, or request repeated expensive tests.
+Current blocker is real strategy-to-executable generation reliability; address
+offline before future approval. Owner can independently complete mailbox/Google
+checks on unchanged Preview. Production stays gated. Branch/source remain as below.
+
+## Groq Generation Fix And New Preview - LATEST
+
+Read GROQ_PLAN_GENERATION_FIX.md first. v4-assumption-validators deployed to Ready
+Preview dpl_D437SJqBPg8pJCmKnBnDjhArTeZM:
+https://retraza-kaaush-pzj0xqmxh-kaushik-yellanki-project.vercel.app
+Groq-only/retries0 unchanged; predecessor3G1P2f retained, Protection/Production
+pointer unchanged. HEAD/branch unchanged, all earlier dirty work preserved.
+Runtime edits: src/ai/plan-contract.ts and prompts.server.ts (descriptions/shared
+reference rules/typed schema-checked example). New groq-assumption-validation unit
+tests and local PGlite relationship test. No validator weakening/repair inference.
+177 offline tests PASS/12 skips,13 new focused PASS, typecheck/lint/Node+Vercel
+builds/secrets PASS. Browser initial OS ERR_NO_BUFFER_SPACE failed one navigation;
+isolated full rerun30 PASS/13 skips. Updated hosted30 PASS/13 skips, SSR200/protected,
+client36 responses0 findings/errors/failures. Logs groq-validator-*.
+No actual AI calls/shared writes/new owner files/consumed approvals/GitHub/
+VibeSprint/Production changes. Previous essential FAIL still historical truth.
+Next: owner reviews NEW exact Preview redirects and personally authors/authorizes
+fresh essential approval using command in the report. Agent must NOT create it,
+reuse f8f713f3 or execute live tests before new approval. Real mailbox/Google,
+later Production and manual publication remain owner gates. No need full rewrites.
+
+## October22 Essential Hosted Run - LATEST
+
+Read ESSENTIAL_HOSTED_ACCEPTANCE_REPORT.md first. Owner approval
+f8f713f3-9ac7-4dd5-9fb7-d911091d94c2 validated and consumed ONCE against exact
+6c0xcg7q2 Preview, Groq-only/retries0. Result FAIL: initial planning JSON schema
+valid but graph rejected with assumption-validator. Classification/login/
+clarification persistence passed. No plan persisted; later workflow NOT REACHED.
+Two logical Groq operations, no retries/other providers. Both temporary users
+deleted; cleanup0 errors/0 remaining rows in all16 tables. No existing-user,
+schema/Auth/VibeSprint/GitHub/deployment changes. Do not reuse this approval.
+56 focused offline regressions pass; no application source changed this turn.
+Remaining acceptance gates: actual planning reliability, remaining essential
+workflow, owner mailbox confirmation and Google callback. Interactive procedure
+is in the report. User reviewed shared redirects; do not repeatedly demand it.
+Current branch/source unchanged from the prior checkpoint below. New report and
+checkpoint documentation are the only additional manual edits.
+
+## October22 Fast-Track Release - CURRENT
+
+Read FINAL_RELEASE_COMPLETION_REPORT.md and OWNER_HOSTED_ACCEPTANCE_CHECKPOINT.md
+FIRST. StatusC: PREVIEW UPDATED; OWNER AUTH/TEST ACTION REQUIRED. This task
+authorized Retraza-only Preview and private Preview/prepared Production variables,
+NOT Production promotion, shared Auth writes, GitHub/PR/merge or VibeSprint changes.
+Branch feat/vibesprint-parity, HEAD ff2cf50832e2dbb880757c65be9dbeeab19555c0;
+all previous work preserved, new work uncommitted. Do not repeat full old test cycles.
+
+Latest Ready/protected Preview dpl_3G1P2fXbu5g42Q3Z68dxFPUzv13a:
+https://retraza-kaaush-6c0xcg7q2-kaushik-yellanki-project.vercel.app
+Exact project prj_IIXn3B3nWc8JqCvPoq6C56En7wze / team_UYEpjjRaObtrYF55SYu5rqUl /
+scope kaushik-yellanki-project. Original Ready Preview retained. Production still
+points to historical CANCELED dpl_Qp3otXDpDpNRXBR94aps2FQvfNWP; no Production
+deployment/promotion. No Git link. Project-domain API verifies retraza-kaaush.vercel.app.
+Reviewed prebuilt app includes v3-replan-continuity and SHA256 source manifest
+2c5ebaee05df14f40c1d837d075160df7b027ab443d71e61b4846b0ec602883e, files176.
+Meta records original HEAD/gitDirty/sourceTreeSha256. Tooling/docs changed later;
+do not claim a fake clean committed build. No app runtime source changed afterward.
+
+OpenRouter key NOW authenticates via official read-only endpoint. Free structured
+models metadata inspected. ONE authorized free-model contract request to
+nvidia/nemotron-3-super-120b-a12b:free returned404, zero output/retries, no database
+writes. NOT PASS, no repeat. Further READ-ONLY metadata found Gemini401 and Groq
+PASS/model-present. FINAL provider/allowlist/every route GROQ ONLY,
+openai/gpt-oss-20b; Gemini and OpenRouter disabled. Quota UNKNOWN. No new Gemini/
+Groq inference. Do not restore an invalid provider merely because older evidence passed.
+Ignored local .env routing/enabled flags now match Groq-only/retries0 too; all
+secret values preserved. .env ignore and environment-name checks pass.
+Deployment helper supports one explicit provider without unrelated keys and
+requires successful fresh model-matching smoke proof before OpenRouter upload.
+No new AI library/model architecture. No credentials printed/committed.
+
+Environment readback found local retries2 forwarded in first new Preview
+dpl_EJSWFQVMGSnFwik6WLs9kaToFkC5. Fixed actual defect: deployment overrides0,
+unit regression asserts, both environments read back0 and final Preview rebuilt
+from SAME checked artifact. SDK retries0. First/new/original Previews preserved.
+Three Preview uploads: first retry correction, second zero-retry configuration,
+third FINAL Groq-only after Gemini metadata401. All use same checked app artifact;
+no AI calls were made against any Preview. No paid upgrades/billing.
+
+New/changed local tooling: scripts/retraza-vercel-env.mjs single-provider support/
+zero retries; scripts/test-environment.mjs explicit essential/extended workflow
+validation; tests/e2e/golden-path.live-supabase.spec.ts selects ONE essential
+one-replan case only when owner JSON has workflow=essential, retains/skips extended.
+Existing scope=golden-live/maxUsers2/maxAiOperations6/expiry/hash/manifest/UUID/
+run-lock/origin/Gemini+Groq/cleanup guards unchanged. Essential workflow uses4
+logical operations (final one-provider config max4 attempts), NOT permission to
+spend unused budget. Owner process allowlist must be groq, matching hosted runtime.
+No owner file/run was created or consumed. No shared writes/users/Auth changes.
+scripts/new-owner-essential-approval.ps1 is OWNER-RUN-ONLY, requires -Approve;
+syntax parsed but NOT executed. It creates no test or deployment, only owner's
+fresh ignored approval. Do not run it as an agent or fabricate acknowledgement.
+
+Other files: tests/integration/openrouter-plan.live.test.ts (one real FAIL;
+default skipped), tests/unit/deployment-env.test.ts, shared-approval.test.ts,
+scripts/final-release-audit.mjs disables new smoke gate, .env.example comments/gate,
+README/current release/owner/hosting docs and MANUAL_GITHUB_RELEASE.md OWNER commands.
+No new product feature/redesign/migration. No application source rework needed.
+
+Relevant changed config/guard tests11 PASS (three added cases; overlapping baseline),
+typecheck PASS, lint0 errors/6 old warnings, local Vercel build PASS. Previous160
+local tests/30 browser remain baseline, not redundantly repeated. Identical-artifact
+preceding Preview30 PASS/0 FAIL/13 skips; FINAL Groq-only Preview8 public PASS,
+0 failed/skipped;36 final client responses0 findings/errors/failures;
+SSR/auth,/demo200+brand+hydration; protection redirect confirmed. Error-log query
+zero error records over inspected30min. Secret source/client/history0 findings.
+Evidence logs/release-*; full exact counts/limitations in current report. No fake
+real Auth, live essential or extended PASS. Prior RLS6/6 and mock PASS remain history.
+
+Current safe next action: owner completes ONE bundle in OWNER_HOSTED_ACCEPTANCE_CHECKPOINT.md:
+review actual shared allowlist (management access denied), preserve Site URL and
+VibeSprint entries, add final exact Preview origin +/auth ONLY if missing; personally
+run owner script and authorize one hosted essential run. Real mailbox/Google consent
+needs owner interaction and separate scoped signup cleanup authorization. Current
+catalog still compatible/fresh until2026-10-22T21:01:23.129Z; don't reexport unless
+expired before approval, don't replay8 structurally present migrations or ledger.
+After owner approval, run exact-origin OIDC-protected harness once, verify16-table
+cleanup. No local server, extra RLS/scenario suite or old approval reuse. Only then
+review staged Production + exact redirects/rollback and request Production approval.
+Owner alone stages/commits/pushes/updates PR#1 using MANUAL_GITHUB_RELEASE.md.
+Required variable NAMES remain below; never ask owner to paste values into chat.
+Older checkpoint restrictions/results below are historical, not current release status.
+
+## October22 Offline Replanning Reliability - Current Checkpoint
+
+Read AI_REPLANNING_RELIABILITY_REPORT.md FIRST. Latest task permits offline work
+only: NO inference, shared mutations/users/migrations/Auth edits, old approval
+reuse, GitHub/PR/merge writes, source VibeSprint changes or deployments.
+Branch feat/vibesprint-parity; HEAD ff2cf50832e2dbb880757c65be9dbeeab19555c0,
+ahead4 at inspection. Prior dirty work preserved; new changes remain uncommitted.
+
+Fixed confirmed lossy replan continuity and status-reset persistence defects.
+New owner-scoped ACTIVE graph context carries stable IDs, strategies, hard edges,
+completion criteria/status/timestamp/result. Every live candidate must preserve
+completed/in-progress definitions and selected strategy; atomic existing RPC
+copies accepted progress into candidate only. Invalid parent/plan/activation,
+orphan nodes, absent selected frontier and invalid uncertainty content fail closed.
+Compact counts/cycle/reference checks unchanged. No migration/RPC/schema edits.
+Prompt v3-replan-continuity distinguishes candidate/history/acceptance, exact
+progress preservation, hard edge direction and untrusted context. Real output
+never repaired/padded or replaced by mocks. Provider fallback remains bounded;
+rate-limit errors recover clearly, diagnostics log only static/whitelisted fields.
+Historical Gemini rejection RULE remains UNKNOWN, not retroactively diagnosed.
+
+Files: src/lib/{planner.server,planning.functions}.ts; src/ai/{prompts.server,
+plan-contract,orchestrator.server,diagnostics.server,mock-provider.server}.ts;
+tests/unit/{replan-continuity,replan-provider-fallback,compact-ai}.test.ts;
+tests/helpers/{replan-context,compact-plan}.ts; tests/integration/replan-failures.test.ts;
+tests/db/transactions.test.ts; tests/e2e/{local-workspace,golden-path.live-supabase}.spec.ts;
+README and reliability/readiness/owner-action/handoff docs; package.json/lock.
+Existing general mock fixtures retained, test-only compact graph connected.
+Future protected Golden Path now asserts completion evidence/strategy survives
+acceptance and relogin; this suite was SKIPPED, not run.
+
+Final patched-toolchain check:release PASS:117 unit/29 deterministic integration/
+14 PGlite SQL =160 passed,0 failed,11 gated live integration skips. Browser30
+passed,0 failed,13 live/environment-specific skips. Typecheck, Node/Vercel builds
+PASS; lint0 errors/6 old warnings; source/client/history secrets0 findings.
+Audit initially found4 dev-tool vulnerabilities. Narrow patches Vite8.1.6,
+Vitest4.1.12 and launch-editor2.14.2 yield audit0 vulnerabilities, fully retested.
+No lifecycle scripts/force upgrade/model/AI settings changed. Logs prefix
+logs/replan-reliability-*; final evidence paths in full report. Zero provider calls,
+Supabase mutations/users, approvals consumed, pushes, VibeSprint changes or deploys.
+
+Read-only CLI confirms existing Retraza Preview Ready/protected, no Git link,
+Node24, Other/Nitro build: npm run build:vercel. It has NOT received these fixes.
+Current project/deployment IDs and exact auth redirect checklist in full report.
+Provider quota UNKNOWN: no current balance/reset metadata, no inference probe.
+
+Required env NAMES only: VITE_SUPABASE_URL/VITE_SUPABASE_PUBLISHABLE_KEY,
+SUPABASE_URL/SUPABASE_PUBLISHABLE_KEY/SUPABASE_SERVICE_ROLE_KEY; GEMINI_API_KEY,
+GROQ_API_KEY, configured GEMINI_MODEL__/GROQ_MODEL__, AI_ROUTE_*, AI_PROVIDER_MODE,
+AI_PROVIDER_ALLOWLIST, AI_PROVIDER_MAX_RETRIES. Local verification uses mock;
+new approved live scope requires Gemini/Groq only/retries0 and existing approval
+env RETRAZA_TEST_BACKEND_MODE/RETRAZA_SHARED_TEST_APPROVAL_FILE/RETRAZA_TEST_RUN_ID.
+Never expose private values. Do not change .env or upload credentials automatically.
+
+Remaining P0/P1 gates: real model compliance/full local live acceptance, current
+quota readiness, separately approved Preview update, additive redirects if missing,
+hosted mailbox/password and Google round trip, hosted authenticated E2E, then
+separate Production approval/rollback and OWNER manual GitHub publishing.
+Next exact action: owner reviews provider dashboard/model quota without inference,
+then personally authors a NEW golden-live approval/new UUID/evidence SHA256.
+Max2 users/6 logical ops/2 candidates each/retry0, exact origin4173, exact-run
+cleanup across16 tables. Current catalog expires2026-10-22T21:01:23.129Z;
+if expired, fresh read-only SQL export and comparator BEFORE owner approval.
+Do not reuse consumed/unused historical files or regenerate bound evidence.
+VerdictA: offline fix verified, READY FOR OWNER-APPROVED RETEST, NOT Production.
+Earlier sections below are historical, not renewed permission to run anything.
+
+## October22 Live AI RETEST FAIL - Initial Plan Fix Verified
+
+Read docs/LIVE_AI_RETEST_REPORT.md first. Unique NEW owner approval/run
+4ce33605-57f3-444c-8f29-56a0bed61a82 passed exact target/scope/expiry/hash/UUID/
+fresh-catalog/user/AI budget guards. One invocation:0/1/1 (extra compact skip).
+Initial Groq classification/clarification and Gemini plan PASS:3 recommended
+milestones,6 executable nodes,14 nodes/12 edges,2 strategies. Strategy switching,
+action completion/progress/reload and check-in PASS. First Gemini replan graph
+rejected; Groq fallback passed/persisted candidate. Groq explanation failed,
+Gemini fallback succeeded; diff/rejection PASS. Second Gemini replan graph
+rejected, Groq fallback AI_RATE_LIMITED. Acceptance, final history/pointer,
+logout/relogin and User B browser checks NOT REACHED. Prior RLS/mock remain
+separate PASS, not substitutes. Exact rejected Gemini rule unknown in old logs.
+
+Consumed5 logical operations/8 provider attempts:Gemini4/Groq4,2 successful
+results each, max2 candidates/operation, zero retries/mocks/other providers.
+Both temporary users ownership/token-verified and deleted;0 rows in ALL16
+tables. Consumed lock preserved. No more live runs without NEW owner approval;
+never fall back to older unused approvals. No schema/Auth/ledger/real-user,
+VibeSprint/GitHub/Preview/Production changes.
+
+Local-only follow-up: static whitelisted validationFailure rule in diagnostics,
+no raw output/error logging or weaker rules. Future diagnostics cannot backfill
+this run's missing rule. Before the run, harness got initialGraph evidence and
+waits for two sequential providers. Post-run parallel demo module-load failure
+retained; strict serial browser passed. Default workers now1 for shared dev
+server; pageerror assertions intact. Final check:release129/0/11 plus browser
+28/0/13 PASS; Node/Vercel builds/typecheck/secrets PASS, lint six old warnings.
+Logs post-live-retest-* and golden-live-retest-<UUID>.log / reversepath-e2e-<UUID>.json.
+Current evidence expires2026-10-22T21:01:23.129Z. Next: review replan validation
+diagnostics/provider quota, then NEW approved live run; hosted/Auth/Google/
+Preview/Production/GitHub actions remain separate gated phases. No auto rerun.
+
+## October22 LIVE AI GOLDEN PATH FAIL - Local Fix Awaits New Approval
+
+Read docs/LIVE_AI_GOLDEN_PATH_REPORT.md first. One newest owner-authorized run
+294fc033-b92f-4b43-b205-063166633e39 consumed:0 passed/1 failed/1 compact-case
+skip. Groq classification and clarification PASS; Gemini initial plan returned
+valid schema/basic graph and persisted, but recommended strategy had1 milestone
+and only1 executable action instead of compact profile3-5 milestones/6-12 actions.
+Stopped at existing assertion. No actions/check-in/replan/version lifecycle/
+relogin/cross-user browser steps reached. Prior mock/RLS remain separate PASS.
+Actual calls Groq1/Gemini1, two logical operations, zero retries/fallback/mocks;
+2484 input/2792 output tokens. Two users verified/deleted, zero rows across16
+tables. Actual scope/hash/expiry/UUID/endpoint/allowlist safeguards passed.
+Older live approval2d5b888d remains unused; do not use it as an automatic rerun.
+Consumed lock retained. NO further live run allowed without NEW owner approval.
+
+Safe local fixes: enforce existing compact profile at live model validation and
+real-source pre-persistence boundary; strengthen prompt count check. General
+mock/blocker behavior retained, no output repair/padding/retry. New helper
+tests/helpers/compact-plan.ts, unit/live-plan-profile.test.ts8 cases and one SDK
+regression; positive SDK fixtures updated. Controlled-shared attempt logging
+contains only operation/provider/attempt/correlation UUID, no prompts/secrets.
+Golden Path summary now saves exact user-scoped AI usage fields. Demo test waits
+for hydration after final reload; no suppressed errors. All changes LOCAL only.
+Final check:release129/0/11; browser28/0/13; Node build/typecheck/secrets PASS,
+lint six existing warnings. First local demo failure retained in prior log.
+Local Vercel build PASS (logs/post-golden-live-vercel-build.log), no upload.
+Next: fresh golden-live owner approval/new UUID to verify fix, then separate
+Preview/Auth allowlist/mailbox/Google/hosted E2E approvals. Exact checklist/URLs
+in full report. No schema/Auth/VibeSprint/GitHub/deployment changes performed.
+Current evidence expires2026-10-22T21:01:23.129Z. Do not regenerate report after
+owner authoring without confirming its bound hash; never fabricate approval.
+
+## October 22 MOCK GOLDEN PATH PASS
+
+Read docs/MOCK_GOLDEN_PATH_VERIFICATION.md. One owner-approved golden-mock run
+e690d114-3fd5-41be-938b-f149b8a11f4d:1 workflow passed,0 failed,1 compact/live-only
+case skipped. Two temporary users created/deleted; zero remaining records across
+all16 app tables. AI usage six mock events only; no live AI calls or new RLS run.
+Verified real local password auth, intake, plan/strategy/graph persistence,
+strategy switching, completion/progress/reload, check-in, two replans with diff,
+reject/accept, three versions/one ACTIVE matching pointer, logout/relogin state,
+User B denied private plan. Clarification not requested; not exercised. No new
+rollback failure injection, hosted auth, Google/mailbox or real AI verification.
+Dev-server logs include navigation/request abort diagnostics, not a clean
+production error-log audit. Consumed UUID lock retained; never rerun this approval.
+Harness change only: stage/branch evidence plus current-run pre/post counts and
+guarded individual cleanup recording. Report and approval/evidence unmodified.
+Next requires NEW owner golden-live approval/UUID, max2 users, maxAIoperations6,
+Gemini/Groq only/retry0, exact local origin4173, fresh evidence/hash and same
+cleanup. Up to12 provider attempts may consume quota. Not authorized/executed.
+Catalog evidence expires 2026-10-22T21:01:23.129Z. No schema/Auth/GitHub/hosting/
+VibeSprint changes. Ignored artifacts: golden-mock-authorized-<UUID>.log and
+reversepath-e2e-<UUID>.json. Previous RLS PASS remains separate evidence.
+Post-run check:release PASS with all live gates off:120/0/11 local tests,
+browser28/0/13; Node build/typecheck/secrets PASS; lint six existing warnings.
+Evidence logs/post-golden-mock-local-checks.log. No additional live invocation.
+
+## October 22 Authorized LIVE RLS PASS
+
+Read docs/LIVE_RLS_VERIFICATION.md. The owner's nonempty approval for UUID
+5ab360f0-60df-4eff-b551-cd4c46282fe4 passed all exact project/scope/expiry/hash/
+freshness/manifest/unused-lock checks. One RLS invocation, six live tests PASS,
+zero failed/skipped. Two temporary users created and both verified/deleted;
+follow-up current-run-ID-only counts found zero rows across all16 app tables.
+Cross-user read/update/delete/export and all five RPC denials passed. No schema/
+Auth/ledger/real-user changes, AI calls, Golden Path, VibeSprint/GitHub/hosting
+changes. Consumed run lock preserved; never reuse the RLS approval/UUID.
+Local harness change: sanitized result recording and guarded per-account cleanup
+with count-only verification, setup/cleanup60s timeout. No broad cleanup/bypass.
+Ignored raw evidence: logs/rls-authorized-<UUID>.log, rls-vitest-<UUID>.json and
+reversepath-rls-<UUID>.json. Golden-mock checkpoint prepared in the report; NEW
+owner approval/file/UUID required, max2 users, zero AI, local origin4173, one
+worker/retry0/traces off, existing exact-run cleanup. Do not run it yet.
+Catalog evidence expires 2026-10-22T21:01:23.129Z. No evidence file regenerated.
+Post-run check:release PASS, all live gates off:120/0/11 deterministic tests;
+browser28/0/13; build/typecheck/secrets PASS, lint six existing warnings.
+Evidence logs/post-authorized-rls-local-checks.log; no second RLS invocation.
+
+## October 22 RLS Chat Approval - Owner File Still Required
+
+Owner explicitly approves ONE two-user RLS-only run, no AI/Golden Path/schema/
+GitHub/hosting changes. Existing harness requires owner-authored JSON; none
+exists. Do not generate it or forge acknowledgement from chat approval.
+LIVE RLS BLOCKED; zero remote users/records/deletions, no consumed live run.
+Fresh compatible catalog and manifest revalidated, age about9h; expires
+2026-10-22T21:01:23.129Z. docs/CONTROLLED_RLS_APPROVAL_CHECKPOINT.md contains
+the exact PowerShell7.5+ command for OWNER execution to create the ignored,
+evidence-hash-bound RLS approval (max30min, fresh UUID, max2 users, zero AI).
+Next agent: inspect actual owner file, guards and expiry before any writes;
+never silently rerun an already consumed UUID or extend approval.
+
+Safe local preparation: scripts/shared-test-fetch.mjs now permits DELETE denial
+probes only for exact current-process inserted table/ID pairs in RLS scope;
+broad/unrelated/Golden Path deletions remain blocked. Tests add User B DELETE
+denials plus owner row preservation and activation/strategy RPC denials.
+Mock guard tests6 pass, check:release120/0/11 (81 unit+27 integration+12 SQL),
+browser28/0/13; typecheck/build/secrets PASS, lint six old warnings. Evidence
+logs/rls-approval-preparation-local-checks.log. All previous uncommitted work
+preserved; no actual owner approval JSON created by the agent.
+golden-mock checkpoint prepared only; separate approval/new UUID required after
+RLS and cleanup. Current live behavioral RLS/RPC results are NOT VERIFIED.
+
+## October 22 Catalog VERIFIED Checkpoint
+
+Supersedes missing-export blockers below. Exact catalog JSON cell from Downloads/
+Supabase Snippet Untitled query.csv extracted unchanged to ignored
+logs/shared-catalog.json. Original download retained. Project correct, age8.55h;
+evidence expires October23 02:31 IST. Do not alter timestamp to extend approval.
+check:shared GET-only passed; catalog verifier exited0, compatible=true/issues[].
+All16 tables/RLS policies,33 indexes,56 constraints,19 selected functions with
+bodies/ACL/security modes,20 table triggers and Auth trigger match baseline.
+All eight local migration outcomes present; local IDs unrecorded but eight
+related named remote ledger entries use different IDs. No replay/history repair.
+
+Fixed only local comparator: PostgreSQL18's redundant NOT NULL constraint rows
+omitted only when proven by matching attnotnull column metadata. Regression
+assertions preserve detection of nullability/FK/RLS/ACL/trigger changes.
+Changed scripts/verify-shared-catalog.mjs and shared-preflight.test.ts. Existing
+fixture/handoff/report changes preserved. No remote writes/AI/deploy/GitHub.
+check:release119/0/11; browser28/0/13; build/typecheck/lint(six existing warnings)/
+secrets PASS, final focused lint/typecheck/formatting PASS. Evidence
+logs/catalog-verified-local-checks.log. Detailed ledger mappings and exact
+first approval checkpoint: docs/RETRAZA_CATALOG_COMPLETION.md (new top section).
+Next: owner approval for one rls run/two temporary users only; actual owner
+approval file required, evidence-bound/fresh, new UUID, zero live AI. Do not
+start golden-mock/live under RLS approval or manufacture approval evidence.
+
+## October 22 Catalog Retrieval Checkpoint
+
+Read docs/RETRAZA_CATALOG_COMPLETION.md for the current evidence and verdict C.
+Owner already executed the read-only SQL successfully; DO NOT ask to repeat it.
+No project catalog/export/report exists locally. Downloads contains no reasonable
+JSON export candidate; credential-file contents were not inspected. Browser
+automation runtime is not exposed in this session; no session/cookie extraction.
+Only next owner action: export the EXISTING SQL result as JSON into Downloads.
+Then copy intact to ignored logs/shared-catalog.json and run the comparator.
+Actual freshness (<24h) and project must be checked, never manufactured.
+
+Fresh GET-only check:shared found16 table endpoints/five RPC signatures;
+ledger406/PGRST106. Catalog verifier exited1/ENOENT; no compatibility report
+generated. All eight remote migrations UNVERIFIABLE, pending count UNKNOWN.
+Fresh check:release PASS:80 unit,27 deterministic integration,12 local SQL,
+11 skipped; browser28/0/13; typecheck/build/secret scan pass, lint six warnings.
+Evidence logs/catalog-completion-local-checks.log. No unchanged AI calls or
+Vercel rebuild/deployment. Existing two uncommitted files preserved. New report
+and this handoff are the only changes this turn; branch feat/vibesprint-parity,
+HEAD ff2cf50832e2dbb880757c65be9dbeeab19555c0. No remote writes or approvals.
+After compatible catalog evidence, obtain separate exact scope/run approval for
+rls, golden-mock or golden-live. Current task does not authorize test users/data.
+
+## October 20 Completion Recheck
+
+Branch remains feat/vibesprint-parity; no GitHub publishing or shared-backend
+writes. Existing Preview dpl_FrVepsubsSfMfyyb1BKQPSV7iFtw is still Ready.
+The protected Preview mobile test failed in both parallel and serial runs because
+route handlers could outlive their page/request context. tests/e2e/fixtures.ts
+now drains handlers with unrouteAll({ behavior: "wait" }) in fixture teardown;
+errors during the test are not suppressed. No application runtime change or
+new deployment was needed.
+
+After the fix: npm run check:release passed (119 unit/integration/SQL tests,
+11 skipped; local browser 28 passed, 13 skipped). Hosted browser suite passed
+28/0/13; previously failing mobile test passed three consecutive serial runs.
+Evidence: logs/recheck-completion-final.log, logs/recheck-hosted-drained.log,
+logs/recheck-mobile-regression.log. Earlier failed hosted attempts are retained
+in logs/recheck-hosted-completion.log and logs/recheck-hosted-serial.log.
+
+Supabase management access to usvopldwiwzlvoqawvcu is still denied and
+logs/shared-catalog.json is absent. Real Auth, live RLS, persisted Golden Path
+and Production acceptance remain BLOCKED, not passed. Owner next action:
+execute supabase/SHARED_READ_ONLY_PREFLIGHT.sql unchanged in that project's
+SQL Editor, save its catalog JSON to logs/shared-catalog.json, then run
+node scripts/verify-shared-catalog.mjs logs/shared-catalog.json. Compatible
+evidence must precede separate scoped approval for shared-data test writes.
+No additional environment variable names are needed for this fixture fix.
+
 ## October 20 Independent Preview Checkpoint
 
 This section supersedes earlier hosting-only blockers below. The owner authorized
@@ -91,12 +795,12 @@ Docs: README, AGENTS, .env.example and all current release runbooks/reports.
 
 Required env NAMES only: VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY,
 SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SERVICE_ROLE_KEY,
-AI_PROVIDER_MODE, GEMINI_API_KEY/GEMINI_MODEL_*, GROQ_API_KEY/GROQ_MODEL_*,
-AI_ROUTE_*, AI_PROVIDER_ALLOWLIST, AI_PROVIDER_MAX_RETRIES and existing quotas.
+AI_PROVIDER_MODE, GEMINI_API_KEY/GEMINI_MODEL__, GROQ_API_KEY/GROQ_MODEL__,
+AI_ROUTE__, AI_PROVIDER_ALLOWLIST, AI_PROVIDER_MAX_RETRIES and existing quotas.
 Default test mode: RETRAZA_TEST_BACKEND_MODE=read-only.
 Owner-controlled optional approval: RETRAZA_SHARED_TEST_APPROVAL_FILE,
 RETRAZA_TEST_RUN_ID; single matching RUN_SUPABASE_RLS_TESTS or RUN_E2E_GOLDEN gate.
-SUPABASE_TEST_* overrides optional; never mark known shared host isolated.
+SUPABASE_TEST__ overrides optional; never mark known shared host isolated.
 No actual approval file or enabled write gate was created by the agent.
 
 Exact next agent action: once the owner reconnects the owning account, inspect
