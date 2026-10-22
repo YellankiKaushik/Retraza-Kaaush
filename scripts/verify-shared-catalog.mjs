@@ -39,7 +39,14 @@ export function compareCatalog(actual, expected) {
             continue;
         }
         for (const field of ["rls", "columns", "constraints", "indexes", "policies", "triggers"])
-            if (JSON.stringify(remote[field]) !== JSON.stringify(local[field]))
+            if (
+                JSON.stringify(
+                    field === "constraints" ? comparableConstraints(remote) : remote[field],
+                ) !==
+                JSON.stringify(
+                    field === "constraints" ? comparableConstraints(local) : local[field],
+                )
+            )
                 issues.push(name + ": " + field + " differs");
     }
     if (JSON.stringify(actual.authProfileTrigger) !== JSON.stringify(expected.authProfileTrigger))
@@ -61,6 +68,22 @@ export function compareCatalog(actual, expected) {
     for (const name of requiredRpcs)
         if (!actual.functions?.some((fn) => fn.name === name)) issues.push(name + ": missing RPC");
     return issues;
+}
+
+function comparableConstraints(table) {
+    // PostgreSQL 18 also records column NOT NULL in pg_constraint. attnotnull is
+    // compared independently above; omit only entries proven redundant by it.
+    return table.constraints?.filter(
+        (constraint) =>
+            constraint.type !== "n" ||
+            !table.columns?.some(
+                (column) =>
+                    column.notNull === true &&
+                    (constraint.definition === "NOT NULL " + column.name ||
+                        constraint.definition ===
+                            'NOT NULL "' + column.name.replaceAll('"', '""') + '"'),
+            ),
+    );
 }
 
 if (process.argv[1]?.replaceAll("\\", "/").endsWith("/verify-shared-catalog.mjs")) {

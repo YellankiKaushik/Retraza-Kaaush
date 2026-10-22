@@ -40,6 +40,30 @@ it("executes the read-only catalog query locally and rejects changed RLS or RPC 
     const expected = await expectedCatalog();
     expect(expected.tables).toHaveLength(16);
     expect(compareCatalog(expected, expected)).toEqual([]);
+    const olderPostgres = structuredClone(expected);
+    for (const table of olderPostgres.tables)
+        table.constraints = table.constraints?.filter((constraint) => constraint.type !== "n");
+    expect(compareCatalog(olderPostgres, expected)).toEqual([]);
+    expect(compareCatalog(expected, olderPostgres)).toEqual([]);
+
+    const nullable = structuredClone(olderPostgres);
+    nullable.tables.find((table) => table.name === "profiles").columns[0].notNull = false;
+    expect(compareCatalog(nullable, expected)).toContain("profiles: columns differs");
+
+    const missingForeignKey = structuredClone(olderPostgres);
+    missingForeignKey.tables.find((table) => table.name === "profiles").constraints =
+        missingForeignKey.tables
+            .find((table) => table.name === "profiles")
+            .constraints.filter((constraint) => constraint.type !== "f");
+    expect(compareCatalog(missingForeignKey, expected)).toContain("profiles: constraints differs");
+
+    const unexpectedConstraint = structuredClone(olderPostgres);
+    unexpectedConstraint.tables
+        .find((table) => table.name === "profiles")
+        .constraints.push({ type: "n", definition: "NOT NULL nonexistent_column" });
+    expect(compareCatalog(unexpectedConstraint, expected)).toContain(
+        "profiles: constraints differs",
+    );
     const altered = structuredClone(expected);
     altered.tables[0].rls = false;
     altered.tables.find((table) => table.name === "plans").triggers = [];
