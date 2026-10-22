@@ -6,6 +6,8 @@ const env = {
     AI_PROVIDER_MODE: "mock",
     RUN_LIVE_AI_SMOKE: "false",
     RUN_LIVE_DEMO_PLAN: "false",
+    RUN_OPENROUTER_PLAN_SMOKE: "false",
+    RUN_GROQ_PLAN_CONTRACT: "false",
     RUN_SUPABASE_RLS_TESTS: "false",
     RUN_E2E_GOLDEN: "false",
     RUN_E2E_SIGNUP: "false",
