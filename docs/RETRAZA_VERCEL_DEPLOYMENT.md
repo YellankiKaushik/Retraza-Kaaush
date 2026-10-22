@@ -1,5 +1,90 @@
 # Retraza Vercel Deployment
 
+## CURRENT - Safety-Only v8 Preview
+
+READY dpl_F7CwWRkM6oVQAJosjae4m44AvKZi,one Preview-only upload,all live provider
+flags false. Stable alias:https://retraza-kaaush-preview-kaushik-yellanki-project.vercel.app
+Immutable:https://retraza-kaaush-gxpdm7gus-kaushik-yellanki-project.vercel.app
+Groq disabled due UNKNOWN ownership;no key deleted/revoked. Prior immutable
+deployments retained but may contain enabled unknown Groq:do not use their AI or
+roll back without reviewed safe provider config. Exact source/project/team/
+target/protection verified. No Production promotion,Github,PR1,VibeSprint edit.
+This is NOT successful AI release;OpenRouter sole planning smokeFAIL after200,
+Gemini metadata401. Canonical evidence:FINAL_HOSTED_LAUNCH_STATUS.md.
+
+## Current v7 Preview
+
+ONE prebuilt Preview upload READY dpl_69vQJtoRbiPGx9CKW3VLdjVE66Zm,target preview,
+exact Retraza project/team/source verified. Prompt v7-groq-wire-contract,
+source161-file SHA256 f5e7b039af2945473a1523e274ac7eaa9cf56e60d1a3c7012f9d8a01de90128d.
+Stable https://retraza-kaaush-preview-kaushik-yellanki-project.vercel.app
+now points to https://retraza-kaaush-6r3itln8t-kaushik-yellanki-project.vercel.app.
+Prior7f/J2 Ready retained;Deployment Protection and Production unchanged.
+Hosted32 PASS/13 skips,SSR/protection/client security PASS. Groq-only OSS20b,
+strict schema/retries0. Final nested-union correction LIVE UNVERIFIED after one
+earlier isolated HTTP400. See FINAL_HOSTED_LAUNCH_STATUS.md for actual evidence.
+Stable Google OWNER-VERIFIED PASS. No Auth/schema/GitHub/VibeSprint/Production edit.
+
+## Current - v6 Bounded Assumptions
+
+Exactly ONE authorized prebuilt Preview upload READY:
+dpl_7fYdNrA9pYDrB7Ti8Uhv7biynUva, promptVersion v6-bounded-assumptions.
+Stable https://retraza-kaaush-preview-kaushik-yellanki-project.vercel.app
+now resolves to https://retraza-kaaush-dre1t0cl4-kaushik-yellanki-project.vercel.app
+Exact Retraza project/team/target=preview/source verified; previous J2 retained.
+Groq-only OSS20b/retry0,Deployment Protection and Production pointer unchanged.
+Hosted32 tests PASS/13 skips,SSR200/protection302,client audit36 assets0 findings.
+See FINAL_HOSTED_LAUNCH_STATUS.md for exact source hash and owner-only next gate.
+No Production/GitHub/Supabase/Auth/VibeSprint changes. Below is historical.
+
+## Latest - Semantic Compiler And Stable Preview
+
+READY Preview dpl_J2rCtSRLW5Rk8K8mJvGYe6EbFCfN, v5-semantic-compiler.
+Stable:https://retraza-kaaush-preview-kaushik-yellanki-project.vercel.app
+Immutable:https://retraza-kaaush-1ylcwp1vq-kaushik-yellanki-project.vercel.app
+Exact project/team/Preview/source checked, ONE reviewed prebuilt upload. New
+unused .vercel.app alias bound only to Retraza Preview; owner can configure two
+exact redirects once. No Production/VibeSprint domain touched; protection and
+canceled Production pointer unchanged, D437 predecessor retained. Groq-only/
+retries0 config unchanged. Hosted30/0/13,SSR/protection both origins PASS,client36
+responses0 findings/errors, runtime error query0/15min. No shared writes/live AI.
+Read SEMANTIC_COMPILER_RELEASE.md before older deployment records below.
+
+## Latest - v4 Assumption Reference Fix
+
+Ready protected Preview dpl_D437SJqBPg8pJCmKnBnDjhArTeZM:
+https://retraza-kaaush-pzj0xqmxh-kaushik-yellanki-project.vercel.app
+Reviewed prebuilt deployment, exact project/team/explicit Preview independently
+verified; metadata v4-assumption-validators and source hash141cad878021105b0e703de795aaa40c8f5d62ce787a9934a29d4d9fde6854be.
+Groq-only/retries0 config unchanged. Predecessor3G1P2f remains Ready, Protection
+and canceled Production pointer unchanged. Hosted30/0/13, SSR/protection PASS,
+36 client responses0 findings/errors/failures. No live AI/shared writes.
+See GROQ_PLAN_GENERATION_FIX.md for source/evidence/owner checkpoint. Older
+deployment records below remain historical rollback/audit references.
+
+## October22 Updated Preview - Current
+
+Current Ready/protected Preview: dpl_3G1P2fXbu5g42Q3Z68dxFPUzv13a,
+https://retraza-kaaush-6c0xcg7q2-kaushik-yellanki-project.vercel.app .
+Latest v3-replan-continuity application built/checked locally and uploaded prebuilt
+with explicit --target=preview/project/scope; source identity metadata retained.
+First new Preview EJSWFQVMGSnFwik6WLs9kaToFkC5 was superseded to fix actual retry
+configuration2 ->0; same verified artifact, no extra AI inference. Original Preview
+retained. Second new Preview corrected retries0; third/final selected Groq alone
+after Gemini model metadata401 (Groq key/model metadata PASS). Readback confirms
+both Preview/prepared Production retry0, all routes/allowlist groq, Gemini and
+OpenRouter disabled. No Production deployment/promotion, source
+VibeSprint/GitHub changes or shared DB/Auth writes. Existing canceled Production
+pointer unchanged. Project domain API verifies retraza-kaaush.vercel.app assigned.
+
+Identical-artifact preceding hosted30/0/13; FINAL Groq-only Preview8 public PASS,
+36 client responses0 findings/errors/failures; SSR200 and
+protection confirmed, inspected scoped runtime error records0. Essential real-data
+acceptance/mailbox/Google still gated, not inferred from public/intercepted tests.
+See FINAL_RELEASE_COMPLETION_REPORT.md and OWNER_HOSTED_ACCEPTANCE_CHECKPOINT.md
+for source SHA256, exact owner procedure and remaining gates. Earlier deployment
+sections below are preserved history, not current app/source status.
+
 October 20, 2026. This is Retraza evidence, not VibeSprint's release evidence.
 
 ## Identity
