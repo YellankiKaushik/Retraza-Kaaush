@@ -1,5 +1,29 @@
 # Retraza / ReversePath Handoff
 
+## v11 Publication And Preview Checkpoint
+
+Runtime source 2a4a83915cd4f7b52522c27e54e1e1242a9ba21b, manifest188 files,
+SHA256 f5b1a02880337efbd65d7ff1d7f32264dae3286f8b14758959e9b5dfcd6aeeac.
+Exactly ONE corrected Preview upload: dpl_6vWj25yUry4d4aACqcs8dsV3VGWP, READY.
+Correct project prj_IIXn3B3nWc8JqCvPoq6C56En7wze and existing team verified.
+Stable https://retraza-kaaush-preview-kaushik-yellanki-project.vercel.app
+now points to this Ready deployment. Immutable:
+https://retraza-kaaush-4euvouj3b-kaushik-yellanki-project.vercel.app
+Previous Ready dpl_U6eVAFLxSSvHWModYspSckT4kGPz retained; no Production change.
+Deployment Protection all_except_custom_domains retained; credentialless demo302.
+Authorized public SSR checks /,/auth,/demo all200 HTML, no server-error text.
+Hosted client audit36 assets:0 secrets,0 page errors,0 failed responses.
+All provider enable flags remain FALSE; no activation on offline PASS.
+One normal ancestry/secret-verified feat/vibesprint-parity publication only;
+no main merge, PR1 change, force push, additional inference or shared acceptance.
+Current blocker is incomplete real provider output at the fixed approved8000
+ceiling, not a reproduced remaining declaration-order defect. Full live graph
+acceptance remains unverified. Do not raise quotas or repeat automatically.
+Next owner action: review the sanitized consumed-run evidence at
+logs/openrouter-plan-71ae1496-f907-4e9a-81e1-f9d6f49c7fd4.json before deciding
+whether to authorize any further isolated provider work. Do not create or use
+shared-hosted approval yet. Shared acceptance/Production remain blocked.
+
 ## LATEST - Order-Independent Dependency Fix Verified; Live Output Truncated
 
 The named converter's target>=index check was an order-based rejection, not real
