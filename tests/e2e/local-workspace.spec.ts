@@ -1,4 +1,5 @@
 import type { Page } from "@playwright/test";
+import { mkdirSync } from "node:fs";
 import { test, expect } from "./fixtures";
 import { mockPlanProposal } from "../../src/ai/mock-provider.server";
 import { persistProposal } from "../../src/lib/planner.server";
@@ -7,6 +8,73 @@ import type { GraphNode, GraphEdge } from "../../src/domain/types";
 
 const owner = "00000000-0000-4000-8000-000000000001";
 const caseId = "00000000-0000-4000-8000-000000000002";
+
+test("documentation screenshots use only synthetic intercepted application data", async ({
+    page,
+}) => {
+    test.skip(
+        process.env["RETRAZA_CAPTURE_DOCS"] !== "true",
+        "Explicit local documentation capture only.",
+    );
+    test.setTimeout(120_000);
+    mkdirSync("docs/screenshots", { recursive: true });
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    await page.route("**/_serverFn/**", (route) => route.abort());
+    await page.route(
+        (url) =>
+            /openrouter\.ai|generativelanguage\.googleapis\.com|api\.groq\.com/.test(url.hostname),
+        (route) => route.abort(),
+    );
+    const capture = async (name: string, fullPage = true) => {
+        await page.evaluate(() => document.fonts.ready);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+            true,
+        );
+        await page.screenshot({
+            path: "docs/screenshots/" + name + ".png",
+            fullPage,
+            animations: "disabled",
+            scale: "css",
+        });
+    };
+    await page.setViewportSize({ width: 1365, height: 960 });
+    await page.goto("/");
+    await expect(page.getByRole("link", { name: "Sign in", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await capture("landing-desktop");
+    await page.goto("/demo");
+    await page.getByRole("button", { name: "Load prepared plan" }).click();
+    await expect(page.getByText("Prepared offline demo · no live AI")).toBeVisible();
+    await capture("public-demo");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await capture("mobile-view");
+    await page.setViewportSize({ width: 1365, height: 960 });
+    await session(page);
+    await rpc(page, () => [summary]);
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "Your plans" })).toBeVisible();
+    await expect(page.getByText(summary.title)).toBeVisible();
+    await capture("dashboard");
+    await page.goto("/new");
+    await expect(page.getByRole("link", { name: "Account", exact: true })).toBeVisible();
+    await page.getByRole("textbox", { name: "Your objective" }).fill(summary.rawText);
+    await expect(page.getByRole("button", { name: "Analyse objective" })).toBeEnabled();
+    await capture("goal-planning");
+    await page.unroute("**/_serverFn/**");
+    const data = await plannedBundle();
+    await rpc(page, () => data);
+    await page.goto("/plans/" + caseId);
+    await expect(page.getByText("Execution frontier", { exact: false })).toBeVisible();
+    await capture("strategy-graph");
+    data.plan.nodes.find((n) => n.node_type === "ACTION")!.status = "DONE";
+    await page.reload();
+    await expect(page.getByText(/% · 1\//)).toBeVisible();
+    await capture("action-progress");
+    await page.getByText("Versions", { exact: true }).scrollIntoViewIfNeeded();
+    await capture("version-history", false);
+    expect(errors).toEqual([]);
+});
 
 // Synthetic browser session only. Every auth and server-function request is intercepted.
 async function session(page: Page) {
