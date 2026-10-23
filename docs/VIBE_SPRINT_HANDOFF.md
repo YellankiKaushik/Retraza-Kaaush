@@ -1,5 +1,40 @@
 # Retraza / ReversePath Handoff
 
+## GitHub Main Publication Checkpoint - October 23, 2026
+
+Owner explicitly authorizes feature publication and fast-forward main publication
+for this checkpoint. Earlier no-main/no-push statements below are historical,
+not current authorization. No Production, provider inference, shared Supabase
+writes, Auth/schema changes or VibeSprint edits are authorized or performed.
+
+README rewritten from actual code: product workflow, implementation/status split,
+stack, Mermaid architecture, Windows/Unix setup, server-only environment names,
+RLS safety, tests, deployment, credits and absence of a repository-level license.
+Historical diagnostics remain in existing docs and Git history.
+Eight real application PNGs captured and visually reviewed; synthetic private
+sessions/server functions intercepted with localhost placeholder configuration.
+No real users/records/credentials shown. Version image shows v1, not invented
+candidate/replan success. Total image payload below600KB, each below150KB.
+Capture test PASS; initial cold Vite optimizer abort/loading image caught and
+replaced after asserting hydrated page content. README image paths/local links
+resolve and GitHub GFM renderer HTTP200 recognizes headings/tables/details and
+Mermaid enrichment. Typecheck/lint/Node+Vercel builds/secret scan PASS.
+
+Runtime source is unchanged from deployed1123cf795f66660e36c9ee3afd75c2accb50f799;
+only docs, screenshots and a browser-only opt-in capture test changed. No Preview
+upload needed. Ready deployment dpl_3LUkWXEemz3SupMG3cqA7otzPvTz remains stable;
+protection all_except_custom_domains retained. Vercel link/gitRepository null,
+no automatic Git deployment connected. All live providers remain disabled.
+Google owner-verified; email delivery/live AI/hosted real-AI acceptance/Production
+remain unverified or pending. Prior controlled schema/RLS evidence is reused,
+not newly executed. Owner-authored shared approval still required for live writes.
+
+Publication procedure: preserve individual commits, normal feature push,
+fast-forward local main only when origin/main is ancestor, normal main push,
+then fetch/read back both refs and inspect default GitHub README/images. No PR1
+edit/deletion, squash, amend, force push or fabricated contribution count.
+Final remote SHA and browser verification are reported in the completion report.
+
 ## v12 Safe Preview And Release Handoff
 
 Exactly ONE Preview-only deployment dpl_3LUkWXEemz3SupMG3cqA7otzPvTz, READY.
