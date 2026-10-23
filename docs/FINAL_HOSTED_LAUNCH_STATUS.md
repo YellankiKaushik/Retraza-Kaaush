@@ -1,9 +1,29 @@
 # Final Hosted Acceptance - October22, 2026
 
+## v10 Preview Release Checkpoint
+
+One Preview-only upload: dpl_U6eVAFLxSSvHWModYspSckT4kGPz, READY.
+Verified Retraza project prj_IIXn3B3nWc8JqCvPoq6C56En7wze and existing team.
+Source commit 78b18af1386be6e9324e50ca08f7d98afd65f285; runtime manifest188 files,
+SHA256 56720de83dd2236ebd9211e8fb1cf20bfe79686e43ce31039f95a4e99a821678.
+Stable: https://retraza-kaaush-preview-kaushik-yellanki-project.vercel.app
+Immutable: https://retraza-kaaush-bmwhqsxz8-kaushik-yellanki-project.vercel.app
+Stable alias updated only after READY and 8 focused public browser checks PASS.
+Client audit:36 assets, zero secrets/page errors/failed responses.
+Protection remains all_except_custom_domains. Previous safe Ready deployment
+ dpl_GYMp9dhEpPv87o9sKY9YLrr5HWMg remains available; Production unchanged.
+All configured provider enable flags remain FALSE. No new inference, Supabase
+access, shared Auth/schema change, PR/main merge or VibeSprint modification.
+Branch feat/vibesprint-parity, author Kaushik, normal ancestry-verified publication
+only. Diagnostic documentation from the prior failed run preserved in history.
+Next owner action remains the separately scoped single Dots/AtlasCloud
+reasoning-off confirmation described below; upstream enforcement is UNKNOWN,
+not a completed bounded-reasoning fix or real-plan PASS.
+
 ## LATEST - Reasoning-Off Wire Verified, Upstream Enforcement UNKNOWN
 
 Prompt v10-optional-reasoning-off prepares only the exact Dots free model for
-reasoning:{enabled:false}. Installed @ai-sdk/openai-compatible 3.0.37 forwards
+reasoning:{enabled:false}. Installed @ai-sdk/openai-compatible 3.0.41 forwards
 provider-specific extra options into the actual serialized HTTP body; mocked
 SDK tests verify the full request, strict schema, 8000 total tokens, AtlasCloud
 pin, require_parameters=true, zero price ceiling/fallback and one fetch.
