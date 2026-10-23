@@ -120,6 +120,7 @@ it("serializes Dots reasoning-off with strict schema and the unchanged total bud
     });
     expect(body.models).toBeUndefined();
     expect(body.response_format.json_schema.strict).toBe(true);
+    expect(body.messages[0].content).toContain("6-8 executable steps TOTAL");
     expect(JSON.stringify(body.response_format.json_schema.schema)).toContain("workKeys");
     expect(fetch).toHaveBeenCalledOnce();
 });
@@ -128,6 +129,23 @@ it("does not impose Dots reasoning options on other configured models", async ()
     await runPlanGeneration(input);
     const call = fetch.mock.calls[0] as unknown as [unknown, RequestInit];
     expect(JSON.parse(String(call[1].body)).reasoning).toBeUndefined();
+});
+it("serializes a diagnostic-only 16000 allowance without retries or a schema change", async () => {
+    vi.stubEnv("OPENROUTER_MODEL_PRIMARY", "dots-studio/dots-3-note-preview:free");
+    vi.stubEnv("OPENROUTER_PROVIDER_ONLY", "atlas-cloud/fp8");
+    vi.stubEnv("AI_MAX_OUTPUT_TOKENS", "16000");
+    const fetch = transport(response(JSON.stringify(semanticPlan())));
+    await runPlanGeneration(input);
+    const call = fetch.mock.calls[0] as unknown as [unknown, RequestInit];
+    const body = JSON.parse(String(call[1].body));
+    expect(body.max_tokens).toBe(16000);
+    expect(body.reasoning).toEqual({ enabled: false });
+    expect(body.provider.only).toEqual(["atlas-cloud/fp8"]);
+    expect(body.provider.allow_fallbacks).toBe(false);
+    expect(body.provider.max_price).toEqual({ prompt: 0, completion: 0 });
+    expect(body.models).toBeUndefined();
+    expect(body.response_format.json_schema.strict).toBe(true);
+    expect(fetch).toHaveBeenCalledOnce();
 });
 for (const [content, finishReason] of [
     [null, "length"],

@@ -1,5 +1,57 @@
 # Final Hosted Acceptance - October22, 2026
 
+## LATEST - Compact Output Verified Offline; One Real Confirmation Rejected
+
+Previous run71ae1496-f907-4e9a-81e1-f9d6f49c7fd4:8000 output tokens,0 reasoning,
+31673 characters, finish_reason=length, incomplete JSON. No newer failed report
+existed before this task. Original bodies were not retained, so repetition,
+excessive action/risk counts, field expansion or an output loop are UNKNOWN.
+No response was reconstructed or private content logged.
+
+Prompt v12-minimal-complete-output targets the smallest meaningful complete
+plan:2 strategies,3 recommended milestones,6-8 steps,3 assumptions/risks and only
+essential conditions. Concise rationales/tradeoffs and compact unindented JSON;
+existing accepted ranges, mandatory content, compiler and validation unchanged.
+Replan retained work/evidence takes precedence over preferred counts/brevity.
+No DTO rewrite:the existing complete synthetic six-step fixture fits below4000
+estimated tokens at a rough3-characters/token heuristic; estimates are not a
+model tokenizer or proof of compliance. No actual semantics were discarded.
+126 focused tests PASS across8 files; actual SDK serialized8000/16000 wire tests,
+strict schema/compiler, forward references/real cycles, ownership, validators,
+continuity, completion evidence, no invalid persistence and redaction covered.
+Typecheck/lint/Node+Vercel builds/secret scan PASS.
+
+Exactly ONE authorized real request, run0f34f2d6-c5f2-4042-a9ad-f9f374b5b540,
+completed2026-10-23T04:59:49.046Z,is CONSUMED. Dots free/AtlasCloud atlas-cloud/fp8,
+reasoning.enabled=false,one diagnostic-only16000 output allowance,$0,no retries,
+fallback,users or Supabase. Fresh key metadata:47 free requests remaining;
+endpoint healthy,status0,zero prompt/completion pricing,max_completion_tokens
+460800,all outgoing parameters supported. Model access checked before POST.
+Project Fluid=true; documented default function duration300s exceeds the existing
+90000ms app timeout used by this diagnostic. No duration/billing setting changed.
+https://vercel.com/docs/functions/configuring-functions/duration
+
+Actual response HTTP200,AtlasCloud,no nested error,finish_reason=stop,real output
+6983 characters,complete JSON,input1219/output1621/reasoning0 tokens. Elapsed20570ms
+(provider/generation/validation;preflight excluded). Reasoning usage ZERO.
+Practical for a single request within existing90s timeout; hosted multi-operation
+latency is NOT established. No production output budget was increased.
+Schema PASS. Strict compiler's final validateProposal rejected milestone-count:
+the recommended branch did not meet3-5 compiled milestones. Exact count/raw
+semantic content were not retained;do not invent them or pad milestones.
+Graph construction reaches validation but full validated graph FAIL. No complete
+live-plan PASS,activation,reties,provider switch or shared acceptance.
+Safe report:logs/openrouter-plan-0f34f2d6-c5f2-4042-a9ad-f9f374b5b540.json.
+
+Conclusion:this free model is NOT validated for reliable production planning
+under the strict application contract. Current evidence shows compact complete
+output is possible,not stable contract compliance. It does not prove the model
+can never work. Live AI remains DISABLED. No validator weakening,synthetic work,
+shared schema/Auth changes,Google retest,GitHub main/PR1/Production/VibeSprint edits.
+Essential hosted acceptance remains BLOCKED until a valid real plan and fresh
+owner-authored shared scope. Email confirmation still UNVERIFIED;Google retains
+OWNER-VERIFIED PASS. No owner approval was generated. Do not automatically repeat.
+
 ## v11 Publication And Preview Checkpoint
 
 Runtime source 2a4a83915cd4f7b52522c27e54e1e1242a9ba21b, manifest188 files,

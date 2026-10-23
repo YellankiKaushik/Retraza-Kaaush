@@ -9,6 +9,10 @@ it.skipIf(process.env["RUN_OPENROUTER_PLAN_SMOKE"] !== "true")(
     "one bounded OpenRouter request satisfies the actual compact planning contract",
     async () => {
         const runId = process.env["OPENROUTER_SMOKE_RUN_ID"];
+        // Diagnostic-only opt-in; never change the application's configured output ceiling.
+        const outputLimit = Number(process.env["OPENROUTER_SMOKE_MAX_OUTPUT_TOKENS"] || 8000);
+        if (![8000, 16000].includes(outputLimit))
+            throw new Error("Only the explicitly approved isolated output budgets are supported");
         if (
             !runId ||
             !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(runId)
@@ -77,6 +81,9 @@ it.skipIf(process.env["RUN_OPENROUTER_PLAN_SMOKE"] !== "true")(
                             e.tag === "atlas-cloud/fp8" &&
                             e.provider_name === "AtlasCloud" &&
                             e.status === 0 &&
+                            Number(
+                                (e as { max_completion_tokens?: number }).max_completion_tokens,
+                            ) >= outputLimit &&
                             Number(e.pricing.prompt) === 0 &&
                             Number(e.pricing.completion) === 0 &&
                             [
@@ -107,7 +114,7 @@ it.skipIf(process.env["RUN_OPENROUTER_PLAN_SMOKE"] !== "true")(
             expect(body.provider.max_price).toEqual({ prompt: 0, completion: 0 });
             expect(body.provider.allow_fallbacks).toBe(false);
             expect(body.provider.require_parameters).toBe(true);
-            expect(body.max_tokens).toBe(8000);
+            expect(body.max_tokens).toBe(outputLimit);
             expect(body.reasoning).toEqual({ enabled: false });
             const requestedParameters = Object.keys(body).filter(
                 (name) => !["model", "messages", "provider", "stream"].includes(name),
@@ -144,9 +151,10 @@ it.skipIf(process.env["RUN_OPENROUTER_PLAN_SMOKE"] !== "true")(
         vi.stubEnv("GROQ_ENABLED", "false");
         vi.stubEnv("GEMINI_ENABLED", "false");
         vi.stubEnv("AI_PROVIDER_MAX_RETRIES", "0");
-        vi.stubEnv("AI_MAX_OUTPUT_TOKENS", "8000");
+        vi.stubEnv("AI_MAX_OUTPUT_TOKENS", String(outputLimit));
         vi.stubEnv("AI_PROVIDER_TIMEOUT_MS", "90000");
         let report: Record<string, unknown>;
+        const startedAt = Date.now();
         try {
             const result = await runPlanGeneration({
                 rawText:
@@ -224,6 +232,8 @@ it.skipIf(process.env["RUN_OPENROUTER_PLAN_SMOKE"] !== "true")(
             model,
             httpStatus,
             requests,
+            elapsedMs: Date.now() - startedAt,
+            outputLimit,
             usersCreated: 0,
             responseShape: observation("OPENROUTER_RESPONSE_SHAPE"),
             diagnostics: observation("AI_DIAGNOSTIC"),
