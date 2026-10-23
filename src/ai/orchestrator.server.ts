@@ -201,6 +201,12 @@ async function callModel<S extends z.ZodType>(args: {
                                   providerOptions: {
                                       openrouter: {
                                           strictJsonSchema: true,
+                                          // This model advertises optional reasoning, not an exact thinking budget.
+                                          // Upstream enforcement still requires an authorized real confirmation.
+                                          ...(candidate.modelId ===
+                                          "dots-studio/dots-3-note-preview:free"
+                                              ? { reasoning: { enabled: false } }
+                                              : {}),
                                           provider: {
                                               ...(process.env["OPENROUTER_PROVIDER_ONLY"]
                                                   ? {
@@ -292,6 +298,8 @@ async function callModel<S extends z.ZodType>(args: {
                     diagnostic.outputTokens = error.usage?.outputTokens ?? null;
                     diagnostic.finishReason = error.finishReason ?? null;
                     diagnostic.schemaValid = false;
+                    if (error.finishReason === "length")
+                        diagnostic.validationFailure = "output-budget";
                 }
                 lastFailure = classifyAiError(error);
                 diagnostic.timedOut =

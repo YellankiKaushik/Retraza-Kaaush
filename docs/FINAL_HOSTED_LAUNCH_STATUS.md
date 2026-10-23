@@ -1,5 +1,96 @@
 # Final Hosted Acceptance - October22, 2026
 
+## LATEST - Reasoning-Off Wire Verified, Upstream Enforcement UNKNOWN
+
+Prompt v10-optional-reasoning-off prepares only the exact Dots free model for
+reasoning:{enabled:false}. Installed @ai-sdk/openai-compatible 3.0.37 forwards
+provider-specific extra options into the actual serialized HTTP body; mocked
+SDK tests verify the full request, strict schema, 8000 total tokens, AtlasCloud
+pin, require_parameters=true, zero price ceiling/fallback and one fetch.
+Other models receive no new reasoning option. No live inference was executed.
+All live providers remain DISABLED. Named compiler/persistence are unchanged.
+
+Official evidence checked October23:
+- https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
+- https://openrouter.ai/api/v1/models (exact Dots entry only)
+- https://openrouter.ai/api/v1/models/dots-studio/dots-3-note-preview:free/endpoints
+- https://dots.ai/platform/docs (native enable_thinking=false direct-response mode)
+Model reasoning metadata is {mandatory:false}; supports_max_tokens and
+supported_efforts are absent. AtlasCloud advertises reasoning and structured
+outputs, but does not publish nested reasoning controls/enforcement guarantees.
+Thus an exact 1024-1536 reasoning cap is NOT established; effort levels must
+not be invented. Reasoning-off is the prepared documented gateway alternative,
+NOT a proven upstream cap. Actual AtlasCloud enforcement with strict JSON is
+UNKNOWN until a separately authorized real request. require_parameters filters
+the advertised top-level parameter, not proof of a nested upstream budget.
+No reasoning.exclude-only workaround, combined effort/max_tokens, native
+undocumented passthrough, higher output ceiling or validator weakening added.
+
+Truncated NoObjectGeneratedError with finishReason=length now has safe
+validationFailure=output-budget, distinct from dangling-edge/semantic failures.
+Incomplete JSON cannot reach persistence; the actual source-handler regression
+asserts no persist RPC, no success idempotency completion and one SDK request.
+New prose limits apply only to new semantic output, preserving accepted evidence.
+The active semantic system already excludes legacy graph instructions; those
+remain only on separate nonsemantic paths and were not removed globally.
+
+Offline: 85 focused PASS; typecheck/lint/Node and Vercel builds/secret scan PASS.
+Full deterministic suite: 247 PASS, 13 opt-in SKIPPED. No remote database calls.
+Initial new persistence-test assertion expected a result object; the real
+handler throws on failure. The regression was corrected to assert that actual
+throwing contract, not to change application behavior.
+
+Prepared next approval (NOT executed, no owner acknowledgement fabricated):
+ONE fictional-goal planning request, fresh unused UUID/exclusive lock, model
+dots-studio/dots-3-note-preview:free, only atlas-cloud/fp8, reasoning.enabled=false,
+max_tokens8000, $0 prompt/completion ceiling, no retries/fallback/Supabase/users.
+Refresh key quota, exact route health/pricing, optional-reasoning model metadata
+and every outgoing parameter before POST. Require complete JSON, semantic schema,
+named references, deterministic graph validity AND reported reasoning_tokens=0.
+Missing/nonzero reasoning usage must not be labeled enforcement success.
+No activation on metadata/mock tests/HTTP200 alone. If enforcement fails, stop;
+no automatic repeated request, cap increase or provider experiment.
+Existing harness: tests/integration/openrouter-plan.live.test.ts (opt-in only).
+After validated success: separately approve essential hosted acceptance, then
+separately authorize Production. No shared Auth/migration/VibeSprint changes.
+
+## LATEST - Authorized v9 Isolated Request FAILED (October 23)
+
+Run 4be1a4d6-f605-41f7-b18e-72c58995d7b7 is CONSUMED. One request, zero
+retries/fallback/users/Supabase calls/writes. Do not rerun its exclusive lock.
+Read-only authorization metadata: HTTP 200, free quota 50 remaining; the harness
+reverified exact Dots free model access, healthy AtlasCloud atlas-cloud/fp8,
+zero prompt/completion prices and every outgoing requested parameter before POST.
+
+Actual response: HTTP 200, AtlasCloud, finish_reason=length, 12717 assistant
+characters, incomplete/invalid content JSON. Input 983, output 8000, reasoning
+5655 tokens. Response envelope was valid; no provider error envelope or timeout.
+Failure AI_SCHEMA_INVALID, stage output-validation, AI_NoObjectGeneratedError.
+No schema object was generated. Named-reference resolution, semantic compilation
+and final graph validity were NOT REACHED, not failed-reference evidence.
+No exact reference path is available because the output never parsed.
+Safe evidence: logs/openrouter-plan-4be1a4d6-f605-41f7-b18e-72c58995d7b7.json.
+No raw prompts/assistant/reasoning bodies or credentials retained.
+
+Evidence establishes output-budget exhaustion, not an adapter or compiler bug.
+No runtime correction, validator weakening, provider switch, inference retry,
+environment activation or Preview deployment was made. All live providers remain
+DISABLED. Existing v9 Ready stable Preview dpl_GYMp9dhEpPv87o9sKY9YLrr5HWMg
+is preserved. Published feature HEAD remains 87898a2; no GitHub push this run.
+Google OAuth remains OWNER-VERIFIED PASS. Essential hosted acceptance and
+Production are BLOCKED pending a complete validated real AI plan and separate
+owner approvals. No Supabase/Auth/schema/VibeSprint/Production modification.
+
+Next owner checkpoint: review this budget-exhaustion evidence and authorize at
+most one revised isolated $0 Dots/AtlasCloud request only after a supported,
+bounded-reasoning configuration is established offline/read-only. Do not repeat
+the unchanged request, raise the approved output budget, or disable validation.
+No such new inference is authorized by this consumed run.
+
+Post-run offline regressions: 53 PASS across OpenRouter adapter, strict wire
+schema and semantic compiler tests. Secret scan: 244 source files and 42 client
+assets, zero findings. Documentation changes remain local and unpublished.
+
 ## Release Checkpoint - v9 Preview Verified
 
 Source commit a33f5ea1f8fb1a20f481fbfaed952bd6ebc99e84 preserves diagnostic

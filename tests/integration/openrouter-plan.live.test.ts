@@ -53,9 +53,12 @@ it.skipIf(process.env["RUN_OPENROUTER_PLAN_SMOKE"] !== "true")(
             throw new Error("No free request quota remains; purchases/upgrades are not authorized");
         expect(metadata.key.httpStatus).toBe(200);
         expect(Date.now() - Date.parse(metadata.checkedAt)).toBeLessThan(3_600_000);
-        expect(metadata.accountModels.models.some((m: { id: string }) => m.id === model)).toBe(
-            true,
-        );
+        expect(
+            metadata.accountModels.models.some(
+                (m: { id: string; reasoning?: { mandatory?: boolean } }) =>
+                    m.id === model && m.reasoning?.mandatory === false,
+            ),
+        ).toBe(true);
         expect(
             endpoints.some(
                 (m: {
@@ -76,9 +79,12 @@ it.skipIf(process.env["RUN_OPENROUTER_PLAN_SMOKE"] !== "true")(
                             e.status === 0 &&
                             Number(e.pricing.prompt) === 0 &&
                             Number(e.pricing.completion) === 0 &&
-                            ["structured_outputs", "response_format", "max_tokens"].every(
-                                (parameter) => e.supported_parameters.includes(parameter),
-                            ),
+                            [
+                                "structured_outputs",
+                                "response_format",
+                                "max_tokens",
+                                "reasoning",
+                            ].every((parameter) => e.supported_parameters.includes(parameter)),
                     ),
             ),
         ).toBe(true);
@@ -102,6 +108,7 @@ it.skipIf(process.env["RUN_OPENROUTER_PLAN_SMOKE"] !== "true")(
             expect(body.provider.allow_fallbacks).toBe(false);
             expect(body.provider.require_parameters).toBe(true);
             expect(body.max_tokens).toBe(8000);
+            expect(body.reasoning).toEqual({ enabled: false });
             const requestedParameters = Object.keys(body).filter(
                 (name) => !["model", "messages", "provider", "stream"].includes(name),
             );
@@ -164,6 +171,12 @@ it.skipIf(process.env["RUN_OPENROUTER_PLAN_SMOKE"] !== "true")(
                 correlationId: crypto.randomUUID(),
             });
             validateProposal(result.data, true);
+            // A missing token count is not proof that the upstream disabled thinking.
+            const shapeCall = observed.mock.calls.find(
+                (row) => row[0] === "OPENROUTER_RESPONSE_SHAPE",
+            );
+            const shape = shapeCall ? JSON.parse(String(shapeCall[1])) : null;
+            expect(shape?.reasoningTokens).toBe(0);
             expect(result.meta.provider).toBe("openrouter");
             expect(result.meta.attempts).toHaveLength(1);
             report = {

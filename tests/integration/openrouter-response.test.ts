@@ -101,6 +101,34 @@ it("restricts an explicitly pinned provider without permitting fallback or paid 
     });
     expect(fetch).toHaveBeenCalledOnce();
 });
+it("serializes Dots reasoning-off with strict schema and the unchanged total budget", async () => {
+    vi.stubEnv("OPENROUTER_MODEL_PRIMARY", "dots-studio/dots-3-note-preview:free");
+    vi.stubEnv("OPENROUTER_PROVIDER_ONLY", "atlas-cloud/fp8");
+    vi.stubEnv("AI_MAX_OUTPUT_TOKENS", "8000");
+    const fetch = transport(response(JSON.stringify(semanticPlan())));
+    await runPlanGeneration(input);
+    const call = fetch.mock.calls[0] as unknown as [unknown, RequestInit];
+    const body = JSON.parse(String(call[1].body));
+    expect(body.model).toBe("dots-studio/dots-3-note-preview:free");
+    expect(body.reasoning).toEqual({ enabled: false });
+    expect(body.max_tokens).toBe(8000);
+    expect(body.provider).toEqual({
+        only: ["atlas-cloud/fp8"],
+        allow_fallbacks: false,
+        require_parameters: true,
+        max_price: { prompt: 0, completion: 0 },
+    });
+    expect(body.models).toBeUndefined();
+    expect(body.response_format.json_schema.strict).toBe(true);
+    expect(JSON.stringify(body.response_format.json_schema.schema)).toContain("workKeys");
+    expect(fetch).toHaveBeenCalledOnce();
+});
+it("does not impose Dots reasoning options on other configured models", async () => {
+    const fetch = transport(response(JSON.stringify(semanticPlan())));
+    await runPlanGeneration(input);
+    const call = fetch.mock.calls[0] as unknown as [unknown, RequestInit];
+    expect(JSON.parse(String(call[1].body)).reasoning).toBeUndefined();
+});
 for (const [content, finishReason] of [
     [null, "length"],
     ["{", "length"],
@@ -122,6 +150,9 @@ for (const [content, finishReason] of [
             reasoningTokens: 7800,
         });
         expect(fetch).toHaveBeenCalledOnce();
+        expect(event("AI_DIAGNOSTIC").validationFailure).toBe(
+            finishReason === "length" ? "output-budget" : null,
+        );
         expect(JSON.stringify(vi.mocked(console.info).mock.calls)).not.toContain(secret);
     });
 it("records an HTTP200 error envelope before SDK parsing without logging its message", async () => {

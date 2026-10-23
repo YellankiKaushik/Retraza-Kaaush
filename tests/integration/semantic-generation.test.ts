@@ -304,6 +304,30 @@ it("rejects nonexistent dependencies before the actual handler's persistence bou
     expect(fetch).toHaveBeenCalledOnce();
     expect(state.complete).not.toHaveBeenCalled();
 });
+it("rejects token-exhausted incomplete JSON before graph persistence without retry", async () => {
+    const fetch = vi.fn(async () =>
+        Response.json({
+            id: "offline-truncated",
+            object: "chat.completion",
+            created: 1,
+            model: "openai/gpt-oss-20b",
+            choices: [
+                {
+                    index: 0,
+                    message: { role: "assistant", content: "{" },
+                    finish_reason: "length",
+                },
+            ],
+            usage: { prompt_tokens: 100, completion_tokens: 8000, total_tokens: 8100 },
+        }),
+    );
+    vi.stubGlobal("fetch", fetch);
+    const { invoke, rpc } = handler();
+    await expect(invoke()).rejects.toThrow("invalid structured output");
+    expect(rpc).not.toHaveBeenCalled();
+    expect(state.complete).not.toHaveBeenCalled();
+    expect(fetch).toHaveBeenCalledOnce();
+});
 it("handles Groq rate limiting without retry, mock success or persistence", async () => {
     const fetch = sdk(null, 429);
     const { invoke, rpc } = handler();

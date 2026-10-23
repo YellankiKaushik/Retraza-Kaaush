@@ -19,7 +19,7 @@ Each assumption declares its owning strategy FIRST or SECOND. HIGH requires vali
 conditions contain relevant requirements/resources/constraints/gaps/metrics, not duplicate tasks. The compiler connects ownership and generates all IDs/edges; do NOT emit tempIds/strategy keys/edges except source=accepted references.
 During replanning, strategy array order matches accepted context.strategies. Server preserves their keys/names and selected route. Use source=accepted with exact tempId to reference retained work without rewriting its definition. Use an accepted milestone's tempId as its key to retain that milestone's identity. Completed/in-progress work omitted from the response is retained by the server, counts toward the executable budget and must not be duplicated as new work. Return a complete candidate, never claim acceptance or overwrite history.
 Select a bottleneck using {strategy:"FIRST" or "SECOND",workKey:"exact-declared-work-key"}, or null with an honest bottleneckReason when evidence is insufficient. Never emit numeric references or node IDs.
-Keep prose concise. Explicit blocker only for a genuine missing condition, never a shortcut to omit meaningful content.
+Keep new titles within 8 words, descriptions within 16 words, and completionCriteria/expectedResult within 12 words each; tests must stay concrete. Use brief strategy rationales/tradeoffs and at most 35 words in summary. Never shorten accepted completion evidence. Return only complete schema-required JSON, without repeated explanations or prose outside it. Explicit blocker only for a genuine missing condition, never a shortcut to omit meaningful content.
 ${POLICY_BLOCK}`;
 }
 

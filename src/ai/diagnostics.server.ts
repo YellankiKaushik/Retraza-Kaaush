@@ -109,6 +109,7 @@ const finishReasons = [
     "unknown",
 ];
 const validationFailures = [
+    "output-budget",
     "graph-integrity",
     "strategy-count",
     "milestone-count",
