@@ -1,5 +1,98 @@
 # Retraza / ReversePath Handoff
 
+## LATEST - Order-Independent Dependency Fix Verified; Live Output Truncated
+
+The named converter's target>=index check was an order-based rejection, not real
+cycle detection. It now rejects only target===index as dependency-self. All
+named keys resolve against the complete owning-strategy map; missing/foreign
+keys remain dangling-edge. Full graph findHardCycle still rejects actual cycles
+as dependency-cycle; prerequisite-to-dependent direction, identity, ownership,
+milestone placement, progress and persistence remain unchanged. Valid legacy
+plans remain readable. No topological presentation rewrite was needed.
+Prompt v11-order-independent-dependencies permits acyclic forward references,
+forbids self/foreign/missing references, and requires an executable start.
+The historical rejected raw target was not retained and was not invented.
+
+123 focused tests PASS across seven files: first-listed work depending on later
+work compiles and atomically persists via mocked source handler; self/cycles
+reject before persistence; multiple prerequisites, independent actions, legacy
+plans, HIGH validators, milestone/action budgets, DONE/IN_PROGRESS continuity,
+completion evidence and transaction invariants remain covered. Typecheck, lint,
+Node/Vercel builds and secret scan PASS. No broad unrelated/live suites rerun.
+
+Exactly ONE authorized confirmation run71ae1496-f907-4e9a-81e1-f9d6f49c7fd4,
+completed2026-10-23T04:38:41.551Z, is CONSUMED; no retries/fallback/users/Supabase.
+Harness refreshed model/account/endpoint metadata before inference and asserted
+Dots free/AtlasCloud atlas-cloud/fp8, reasoning.enabled=false,8000 output ceiling,
+zero prices, strict schema and supported parameters before its sole POST.
+Actual HTTP200, AtlasCloud, no nested provider error, real content31673 chars,
+finish_reason=length, output8000/input1087/reasoning0 tokens. Reasoning usage ZERO,
+reasoning-off enforced for this request. Content JSON incomplete; failure
+AI_SCHEMA_INVALID / output-budget / output-validation / AI_NoObjectGeneratedError.
+Semantic schema, named resolution, compilation and final validation NOT REACHED.
+This run does not demonstrate a remaining dependency failure. Do not claim a
+live graph PASS from offline regressions. No further inference authorized.
+Safe report:logs/openrouter-plan-71ae1496-f907-4e9a-81e1-f9d6f49c7fd4.json.
+No raw prompts/generated text/reasoning/private data retained.
+
+All providers stay DISABLED. No speculative provider, quota, reasoning or graph
+repair changes were made after the failure. The existing reporting adjustment
+separates plan validity from ZERO/NONZERO/NOT REPORTED reasoning enforcement,
+per the prior owner request; it does not weaken application graph validation.
+No Supabase/Auth/schema/migration/VibeSprint/Production changes. Essential shared
+acceptance remains BLOCKED until a real complete validated plan and fresh owner
+approval. Google OWNER-VERIFIED PASS; email confirmation still UNVERIFIED.
+The essential approval command remains owner-only:
+.\\scripts\\new-owner-essential-approval.ps1 -AppOrigin 'https://retraza-kaaush-preview-kaushik-yellanki-project.vercel.app' -Approve
+Do NOT run it as the next gate yet: it requires fresh compatible catalog evidence
+and the shared harness currently binds legacy Gemini/Groq providers, not an
+owner-reviewed OpenRouter shared scope. No guard was bypassed or approval forged.
+
+## LATEST - Reasoning-Off Confirmed, Plan Rejected Before Persistence
+
+Owner-authorized run 58203f41-6a25-45a8-b5f4-f5a4b69335b6 completed
+2026-10-23T04:26:05.646Z. This exclusive run ID is CONSUMED; never retry it.
+One real Dots free / AtlasCloud atlas-cloud/fp8 request, reasoning.enabled=false,
+8000 total output ceiling, $0 price filter, no fallback/retries/Supabase/users.
+Fresh key metadata showed49 of50 free requests available; the harness verified
+exact route health, zero pricing and all outgoing parameters before inference.
+
+HTTP200, provider AtlasCloud, no nested error, finish_reason=stop. Real assistant
+content11948 characters, complete JSON, schema PASS. Input1054/output2733 tokens,
+reasoning_tokens=0 (ZERO). Reasoning-off enforcement PASS for THIS request only.
+No private content/credentials/raw output retained. Exact requested model:
+dots-studio/dots-3-note-preview:free. Response model-field presence verified;
+its raw model string was not retained independently of the requested model.
+
+Plan validation FAIL: AI_GRAPH_INVALID, semantic-compilation, dependency-cycle.
+Exact safe path: strategies[0].milestones[0].work[0].dependency.workKeys[0].
+The compiler resolved a declared named target but rejected its index because it
+was not earlier than the first work item. It is self OR later work; the raw key
+and numeric target were not retained, so those cases cannot be distinguished.
+This proves an earlier-only contract violation, NOT necessarily a genuine cycle
+in the intended graph. No schema/parsing/token-exhaustion failure this time.
+Full named-reference validation, complete compiled graph and final validation
+NOT PASSED. No application compiler defect established and no dependency dropped.
+Safe report:logs/openrouter-plan-58203f41-6a25-45a8-b5f4-f5a4b69335b6.json.
+
+Before execution, the harness was aligned with the owner's latest criteria:
+plan validity is separate from ZERO/NONZERO/NOT REPORTED reasoning enforcement.
+It still requires actual content, complete JSON, no truncation, AtlasCloud and
+full strict semantic/graph validation. No application validator was weakened.
+This harness-only reporting change and these notes remain LOCAL/unpublished.
+No runtime contract change or speculative graph repair was made without a
+retained response proving a compiler bug. Existing self/forward-reference
+regressions cover this failure class. Post-run:85 focused offline tests PASS;
+typecheck/lint PASS. No additional inference, activation, push or deployment.
+
+All live providers remain DISABLED. Stable Preview remains
+ dpl_U6eVAFLxSSvHWModYspSckT4kGPz; GitHub HEAD c3743e1 unchanged.
+Essential hosted acceptance and Production BLOCKED pending a complete real plan
+and separate fresh owner approvals. No database/Auth/schema/VibeSprint changes.
+Next checkpoint: review this exact first-work prerequisite failure and harden
+its generation contract offline before considering any fresh isolated inference.
+Do not repeat this unchanged request or claim reasoning-off implies plan success.
+
 ## v10 Preview Release Checkpoint
 
 One Preview-only upload: dpl_U6eVAFLxSSvHWModYspSckT4kGPz, READY.

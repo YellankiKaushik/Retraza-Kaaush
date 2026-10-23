@@ -122,6 +122,7 @@ const validationFailures = [
     "duplicate-node",
     "dangling-edge",
     "dependency-cycle",
+    "dependency-self",
     "strategy-selection",
     "orphan-node",
     "executable-frontier",

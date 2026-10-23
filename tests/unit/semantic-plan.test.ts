@@ -6,6 +6,36 @@ import { replanContext } from "../helpers/replan-context";
 import { compactPlan } from "../helpers/compact-plan";
 
 describe("deterministic semantic graph compiler", () => {
+    it("allows the first-listed work to depend on later work without changing direction", () => {
+        const s = semanticPlan();
+        s.strategies[0]!.milestones[0]!.work[0]!.dependency = {
+            kind: "AFTER",
+            workKeys: ["roles"],
+        };
+        const before = structuredClone(s);
+        const p = compileSemanticPlan(s);
+        const first = p.nodes.find((n) => n.title === "Measure weekly study capacity")!;
+        const later = p.nodes.find((n) => n.title === "Compare three PM role descriptions")!;
+        expect(p.edges).toContainEqual(
+            expect.objectContaining({
+                from: later.tempId,
+                to: first.tempId,
+                hardDependency: true,
+            }),
+        );
+        expect(p.edges.some((e) => e.hardDependency && e.to === later.tempId)).toBe(false);
+        expect(() => validateProposal(p, true)).not.toThrow();
+        expect(s).toEqual(before);
+    });
+    it("rejects an actual named A-B-A cycle, not a declaration-order difference", () => {
+        const s = semanticPlan();
+        const work = s.strategies[0]!.milestones[0]!.work;
+        work[0]!.dependency = { kind: "AFTER", workKeys: [work[1]!.key] };
+        work[1]!.dependency = { kind: "AFTER", workKeys: [work[0]!.key] };
+        expect(() => compileSemanticPlan(s)).toThrowError(
+            expect.objectContaining({ validationRule: "dependency-cycle" }),
+        );
+    });
     it("compiles previously valid indexed output identically to the named contract", () => {
         const old = legacySemanticPlan();
         const before = structuredClone(old);
@@ -70,11 +100,9 @@ describe("deterministic semantic graph compiler", () => {
                 }),
             );
         });
-    for (const workKey of ["absent", "interview", "capacity", "review"])
+    for (const workKey of ["absent", "interview", "capacity"])
         it(
-            "rejects undeclared, foreign, self or future dependency " +
-                workKey +
-                " at its exact path",
+            "rejects undeclared, foreign or self dependency " + workKey + " at its exact path",
             () => {
                 const s = semanticPlan();
                 s.strategies[0]!.milestones[0]!.work[0]!.dependency = {
@@ -84,6 +112,8 @@ describe("deterministic semantic graph compiler", () => {
                 const before = structuredClone(s);
                 expect(() => compileSemanticPlan(s)).toThrowError(
                     expect.objectContaining({
+                        validationRule:
+                            workKey === "capacity" ? "dependency-self" : "dangling-edge",
                         issues: [
                             {
                                 code: "custom",
@@ -139,7 +169,7 @@ describe("deterministic semantic graph compiler", () => {
         s.strategies[0]!.milestones[0]!.work[0]!.prerequisiteIndexes = [0];
         expect(() => compileSemanticPlan(s)).toThrowError(
             expect.objectContaining({
-                validationRule: "dependency-cycle",
+                validationRule: "dependency-self",
                 referenceTargetIndex: 0,
             }),
         );

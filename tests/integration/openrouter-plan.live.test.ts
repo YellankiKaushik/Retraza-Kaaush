@@ -171,12 +171,14 @@ it.skipIf(process.env["RUN_OPENROUTER_PLAN_SMOKE"] !== "true")(
                 correlationId: crypto.randomUUID(),
             });
             validateProposal(result.data, true);
-            // A missing token count is not proof that the upstream disabled thinking.
             const shapeCall = observed.mock.calls.find(
                 (row) => row[0] === "OPENROUTER_RESPONSE_SHAPE",
             );
             const shape = shapeCall ? JSON.parse(String(shapeCall[1])) : null;
-            expect(shape?.reasoningTokens).toBe(0);
+            expect(shape?.assistantTextPresent).toBe(true);
+            expect(shape?.contentJsonValid).toBe(true);
+            expect(shape?.finishReason).not.toBe("length");
+            expect(shape?.reportedProvider).toBe("AtlasCloud");
             expect(result.meta.provider).toBe("openrouter");
             expect(result.meta.attempts).toHaveLength(1);
             report = {
@@ -225,6 +227,18 @@ it.skipIf(process.env["RUN_OPENROUTER_PLAN_SMOKE"] !== "true")(
             usersCreated: 0,
             responseShape: observation("OPENROUTER_RESPONSE_SHAPE"),
             diagnostics: observation("AI_DIAGNOSTIC"),
+            reasoningUsage:
+                observation("OPENROUTER_RESPONSE_SHAPE")?.reasoningTokens == null
+                    ? "NOT REPORTED"
+                    : observation("OPENROUTER_RESPONSE_SHAPE").reasoningTokens === 0
+                      ? "ZERO"
+                      : "NONZERO",
+            reasoningOffEnforced:
+                observation("OPENROUTER_RESPONSE_SHAPE")?.reasoningTokens === 0
+                    ? true
+                    : observation("OPENROUTER_RESPONSE_SHAPE")?.reasoningTokens == null
+                      ? null
+                      : false,
         });
         mkdirSync("logs", { recursive: true });
         writeFileSync(`logs/openrouter-plan-${runId}.json`, JSON.stringify(report, null, 2), {

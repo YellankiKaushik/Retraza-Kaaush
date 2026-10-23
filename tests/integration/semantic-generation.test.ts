@@ -304,6 +304,27 @@ it("rejects nonexistent dependencies before the actual handler's persistence bou
     expect(fetch).toHaveBeenCalledOnce();
     expect(state.complete).not.toHaveBeenCalled();
 });
+for (const mode of ["forward", "self", "cycle"] as const)
+    it("actual handler preserves " + mode + " dependency semantics at persistence", async () => {
+        const s = semanticPlan();
+        const work = s.strategies[0]!.milestones[0]!.work;
+        work[0]!.dependency = {
+            kind: "AFTER",
+            workKeys: [mode === "self" ? work[0]!.key : work[1]!.key],
+        };
+        if (mode === "cycle") work[1]!.dependency = { kind: "AFTER", workKeys: [work[0]!.key] };
+        const fetch = sdk(s);
+        const { invoke, rpc } = handler();
+        if (mode === "forward") {
+            await expect(invoke()).resolves.toMatchObject({ versionId: "saved" });
+            expect(rpc).toHaveBeenCalledOnce();
+        } else {
+            await expect(invoke()).rejects.toThrow();
+            expect(rpc).not.toHaveBeenCalled();
+            expect(state.complete).not.toHaveBeenCalled();
+        }
+        expect(fetch).toHaveBeenCalledOnce();
+    });
 it("rejects token-exhausted incomplete JSON before graph persistence without retry", async () => {
     const fetch = vi.fn(async () =>
         Response.json({

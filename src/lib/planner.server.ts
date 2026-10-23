@@ -267,7 +267,7 @@ export function validateProposal(
             throw new DomainError(
                 "PLAN_VALIDATION_FAILED",
                 "The proposed plan contains a self-referential dependency.",
-                "dependency-cycle",
+                "dependency-self",
             );
     }
 

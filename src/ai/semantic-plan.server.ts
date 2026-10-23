@@ -272,12 +272,12 @@ function indexedPlan(input: SemanticPlan): LegacySemanticPlan {
                                       di,
                                   ];
                                   const target = resolve(si, workKey, path, "dangling-edge");
-                                  if (target >= index)
+                                  if (target === index)
                                       referenceFailure(
-                                          "AFTER must reference earlier declared work, never itself or future work",
-                                          "dependency-cycle",
+                                          "Work cannot depend on itself",
+                                          "dependency-self",
                                           path,
-                                          workKey,
+                                          target,
                                       );
                                   return target;
                               });
@@ -478,7 +478,7 @@ function compileIndexedPlan(raw: LegacySemanticPlan, continuity?: ReplanContext)
                 if (prerequisite === index)
                     referenceFailure(
                         "Work cannot depend on itself",
-                        "dependency-cycle",
+                        "dependency-self",
                         [...workPaths[index]!, "prerequisiteIndexes", di],
                         prerequisite,
                     );
